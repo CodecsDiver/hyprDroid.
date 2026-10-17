@@ -1,0 +1,2 @@
+# hyprDroid.
+hyprland on Android
