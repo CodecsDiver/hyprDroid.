@@ -78,7 +78,7 @@ func describe_for_observation() -> Dictionary:
 		"position": [snappedf(global_position.x, 0.01), snappedf(global_position.z, 0.01)],
 		"shape": "circle" if shape == Shape.CIRCLE else "rectangle",
 		"radius": radius if shape == Shape.CIRCLE else 0.0,
-		"half_extents": [half_extents.x, half_extents.y] if shape == Shape.RECTANGLE else [],
+		"half_extents": [snappedf(half_extents.x, 0.01), snappedf(half_extents.y, 0.01)] if shape == Shape.RECTANGLE else [],
 		"active": is_active(),
 		"warning": is_warning(),
 	}

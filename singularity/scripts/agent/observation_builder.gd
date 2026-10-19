@@ -111,10 +111,21 @@ static func _describe_abilities(actor: Combatant) -> Array:
 			"kind": AbilityDefinition.Kind.keys()[instance.definition.kind].to_lower(),
 			"ready": instance.is_ready(),
 			"cooldown_remaining": snappedf(instance.cooldown_remaining, 0.01),
-			"reach": instance.definition.reach,
+			"reach": _effective_reach(instance.definition),
 			"radius": instance.definition.radius,
 		})
 	return described
+
+
+## Pulses and guards act around the user, so their "reach" is the area radius (or zero).
+static func _effective_reach(definition: AbilityDefinition) -> float:
+	match definition.kind:
+		AbilityDefinition.Kind.PULSE:
+			return definition.radius
+		AbilityDefinition.Kind.GUARD:
+			return 0.0
+		_:
+			return definition.reach
 
 
 static func _describe_choices(singularity: SingularityActor) -> Array:
