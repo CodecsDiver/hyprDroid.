@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="SingularityDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ability_definition.gd" id="1_aw6ul"]
+[ext_resource type="Script" path="res://scripts/resources/singularity_definition.gd" id="2_5ibh3"]
+
+[sub_resource type="Resource" id="Resource_uvpwa"]
+script = ExtResource("1_aw6ul")
+id = &"axiom_9_pulse"
+display_name = "Placeholder Pulse"
+description = ""
+kind = 3
+cooldown = 8.0
+damage = 24.0
+reach = 6.0
+radius = 5.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 4.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(0.2, 0.6, 1, 1)
+
+[sub_resource type="Resource" id="Resource_2gamp"]
+script = ExtResource("1_aw6ul")
+id = &"axiom_9_dash"
+display_name = "Placeholder Dash"
+description = ""
+kind = 2
+cooldown = 6.0
+damage = 12.0
+reach = 7.0
+radius = 0.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.2
+tick_interval = 0.5
+summon_count = 1
+knockback = 0.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(0.2, 0.6, 1, 1)
+
+[sub_resource type="Resource" id="Resource_mrct5"]
+script = ExtResource("1_aw6ul")
+id = &"axiom_9_bolt"
+display_name = "Placeholder Bolt"
+description = ""
+kind = 0
+cooldown = 0.5
+damage = 10.0
+reach = 14.0
+radius = 0.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 0.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(0.2, 0.6, 1, 1)
+
+[resource]
+script = ExtResource("2_5ibh3")
+id = &"axiom_9"
+display_name = "AXIOM-9"
+tagline = "Deterministic logic."
+philosophy = "Patterns repeat. Predict, counter, and manage risk."
+color = Color(0.2, 0.6, 1, 1)
+body_shape = 1
+kit_status = 1
+base_stats = {}
+primary_ability = SubResource("Resource_mrct5")
+ability_one = SubResource("Resource_uvpwa")
+ability_two = SubResource("Resource_2gamp")
+preferred_range = 9.0
+aggression = 0.45
+retreat_health_fraction = 0.25
+ability_use_enemy_count = 2
+agent_profile_id = &"conventional_ai"

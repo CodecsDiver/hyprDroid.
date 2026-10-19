@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="BalanceConfig" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/balance_config.gd" id="1_abo8p"]
+[ext_resource type="Resource" path="res://data/balance/xp_curve.tres" id="2_c7grc"]
+
+[resource]
+script = ExtResource("1_abo8p")
+victory_survive_seconds = 1800.0
+upgrade_choice_count = 3
+xp_share_mode = 0
+tactical_time_scale = 1.0
+defeat_delay_seconds = 1.5
+xp_curve = ExtResource("2_c7grc")
+xp_gem_magnet_speed = 14.0
+max_gems_alive = 250
+gem_lifetime_seconds = 0.0
+upgrade_rarity_weights = {
+"common": 60.0,
+"legendary": 2.0,
+"rare": 10.0,
+"uncommon": 28.0
+}
+upgrade_rarity_level_growth = {
+"common": 0.0,
+"legendary": 0.05,
+"rare": 0.03,
+"uncommon": 0.012
+}
+chest_rarity_weights = {
+"common": 55.0,
+"legendary": 3.0,
+"rare": 12.0,
+"uncommon": 30.0
+}
+chest_equipment_chance = 0.12
+enemy_health_growth_per_minute = 0.12
+enemy_damage_growth_per_minute = 0.06
+enemy_speed_growth_per_minute = 0.01
+enemy_speed_growth_cap = 0.5
+spawn_rate_start = 0.9
+spawn_rate_growth_per_minute = 0.15
+spawn_rate_max = 6.0
+max_alive_enemies = 110
+spawn_distance_min = 16.0
+spawn_distance_max = 34.0
+wave_interval_seconds = 45.0
+wave_size_base = 8
+wave_size_growth_per_minute = 1.5
+elite_first_spawn_seconds = 240.0
+elite_interval_seconds = 150.0
+armor_constant = 100.0
+knockback_decay = 22.0
+hazards_hurt_all_teams = true
+interact_range = 3.2
+human_profile_id = &"human"
+enemy_profile_id = &"enemy_brain"
+default_external_profile_id = &"external_default"

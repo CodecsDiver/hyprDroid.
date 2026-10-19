@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_bg6ct"]
+[ext_resource type="Script" path="res://scripts/resources/upgrade_definition.gd" id="2_wjmpq"]
+
+[resource]
+script = ExtResource("2_wjmpq")
+id = &"restore_integrity"
+display_name = "Restore Integrity"
+description = "Emergency repair: restore 35% health."
+rarity = 0
+weight = 1.0
+max_stacks = 0
+modifiers = Array[ExtResource("1_bg6ct")]([])
+requires = {}
+excludes = PackedStringArray()
+character_ids = PackedStringArray()
+is_fallback = true
+instant_heal_fraction = 0.35

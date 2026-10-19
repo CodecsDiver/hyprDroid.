@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_gryxb"]
+[ext_resource type="Script" path="res://scripts/resources/upgrade_definition.gd" id="2_8yq1i"]
+
+[sub_resource type="Resource" id="Resource_fvvtn"]
+script = ExtResource("1_gryxb")
+stat = &"cooldown_reduction"
+operation = 0
+value = 0.1
+stack_mode = 1
+hyperbolic_cap = 0.5
+
+[resource]
+script = ExtResource("2_8yq1i")
+id = &"distributed_targeting"
+display_name = "Distributed Targeting"
+description = "C.lo.d: faster cooldown recovery."
+rarity = 1
+weight = 1.0
+max_stacks = 4
+modifiers = Array[ExtResource("1_gryxb")]([SubResource("Resource_fvvtn")])
+requires = {}
+excludes = PackedStringArray()
+character_ids = PackedStringArray("c_lo_d")
+is_fallback = false
+instant_heal_fraction = 0.0

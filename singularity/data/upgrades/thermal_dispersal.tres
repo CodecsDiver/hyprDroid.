@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_610e6"]
+[ext_resource type="Script" path="res://scripts/resources/upgrade_definition.gd" id="2_lpkmf"]
+
+[sub_resource type="Resource" id="Resource_03m4d"]
+script = ExtResource("1_610e6")
+stat = &"cooldown_reduction"
+operation = 0
+value = 0.08
+stack_mode = 1
+hyperbolic_cap = 0.5
+
+[resource]
+script = ExtResource("2_lpkmf")
+id = &"thermal_dispersal"
+display_name = "Thermal Dispersal"
+description = "Abilities recover faster."
+rarity = 1
+weight = 1.0
+max_stacks = 5
+modifiers = Array[ExtResource("1_610e6")]([SubResource("Resource_03m4d")])
+requires = {}
+excludes = PackedStringArray()
+character_ids = PackedStringArray()
+is_fallback = false
+instant_heal_fraction = 0.0

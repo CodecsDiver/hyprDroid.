@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_02xqa"]
+[ext_resource type="Script" path="res://scripts/resources/upgrade_definition.gd" id="2_ushld"]
+
+[sub_resource type="Resource" id="Resource_7vily"]
+script = ExtResource("1_02xqa")
+stat = &"xp_gain"
+operation = 1
+value = 0.08
+stack_mode = 0
+hyperbolic_cap = 1.0
+
+[resource]
+script = ExtResource("2_ushld")
+id = &"efficiency_protocols"
+display_name = "Efficiency Protocols"
+description = "Learn more from every encounter."
+rarity = 0
+weight = 1.0
+max_stacks = 5
+modifiers = Array[ExtResource("1_02xqa")]([SubResource("Resource_7vily")])
+requires = {}
+excludes = PackedStringArray()
+character_ids = PackedStringArray()
+is_fallback = false
+instant_heal_fraction = 0.0

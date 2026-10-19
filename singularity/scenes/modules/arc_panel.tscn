@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/hazard_zone.gd" id="1_gww3v"]
+
+[node name="Hazard_arc_panel" type="Node3D"]
+script = ExtResource("1_gww3v")
+hazard_id = &"arc_panel"
+shape = 1
+radius = 0.0
+half_extents = Vector2(1.8, 1.8)
+damage_per_second = 26.0
+tick_interval = 0.5
+slow_strength = 0.0
+active_seconds = 1.2
+inactive_seconds = 3.0
+warning_seconds = 0.8
+color = Color(0.4, 0.7, 1, 1)
+phase_offset = 0.0

@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ability_definition.gd" id="1_u3e4u"]
+[ext_resource type="Script" path="res://scripts/resources/enemy_definition.gd" id="2_ooort"]
+
+[sub_resource type="Resource" id="Resource_c7tm5"]
+script = ExtResource("1_u3e4u")
+id = &"brute_slam"
+display_name = "Slam"
+description = ""
+kind = 1
+cooldown = 1.4
+damage = 16.0
+reach = 2.0
+radius = 0.0
+arc_degrees = 140.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 4.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(1, 0.3, 0.2, 1)
+
+[resource]
+script = ExtResource("2_ooort")
+id = &"containment_brute"
+display_name = "Containment Brute"
+base_health = 120.0
+move_speed = 2.5
+body_radius = 0.5
+visual_scale = 1.5
+color = Color(0.75, 0.2, 0.2, 1)
+xp_value = 6.0
+preferred_distance = 0.0
+is_elite = false
+elite_chest_drop_chance = 0.0
+primary_ability = SubResource("Resource_c7tm5")
+spawn_weight = 2.0
+spawn_start_seconds = 180.0
+spawn_end_seconds = -1.0
+spawn_weight_growth_per_minute = 0.5

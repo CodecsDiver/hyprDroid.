@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ability_definition.gd" id="1_anjl8"]
+[ext_resource type="Script" path="res://scripts/resources/enemy_definition.gd" id="2_ajulp"]
+
+[sub_resource type="Resource" id="Resource_2roi6"]
+script = ExtResource("1_anjl8")
+id = &"sentry_bolt"
+display_name = "Spark Bolt"
+description = ""
+kind = 0
+cooldown = 1.8
+damage = 7.0
+reach = 16.0
+radius = 0.0
+arc_degrees = 90.0
+projectile_speed = 11.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 0.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(1, 0.4, 0.7, 1)
+
+[resource]
+script = ExtResource("2_ajulp")
+id = &"spark_sentry"
+display_name = "Spark Sentry"
+base_health = 32.0
+move_speed = 3.0
+body_radius = 0.5
+visual_scale = 1.0
+color = Color(0.95, 0.3, 0.6, 1)
+xp_value = 4.0
+preferred_distance = 9.0
+is_elite = false
+elite_chest_drop_chance = 0.0
+primary_ability = SubResource("Resource_2roi6")
+spawn_weight = 2.5
+spawn_start_seconds = 120.0
+spawn_end_seconds = -1.0
+spawn_weight_growth_per_minute = 0.3

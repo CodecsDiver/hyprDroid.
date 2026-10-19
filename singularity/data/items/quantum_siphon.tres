@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_k3ecx"]
+[ext_resource type="Script" path="res://scripts/resources/item_definition.gd" id="2_gluyg"]
+
+[sub_resource type="Resource" id="Resource_btjac"]
+script = ExtResource("1_k3ecx")
+stat = &"life_steal"
+operation = 0
+value = 0.04
+stack_mode = 1
+hyperbolic_cap = 0.3
+
+[resource]
+script = ExtResource("2_gluyg")
+id = &"quantum_siphon"
+display_name = "Quantum Siphon"
+description = "Drain integrity from impacts."
+rarity = 2
+max_stacks = 0
+modifiers = Array[ExtResource("1_k3ecx")]([SubResource("Resource_btjac")])
+proc_kind = 0
+proc_chance = 1.0
+proc_chance_cap = 1.0
+proc_value = 0.0
+proc_value_per_extra_stack = 0.0
+proc_radius = 3.0
+proc_duration = 2.0
+weight = 1.0

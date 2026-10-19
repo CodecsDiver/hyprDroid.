@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="SingularityDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ability_definition.gd" id="1_bpas5"]
+[ext_resource type="Script" path="res://scripts/resources/singularity_definition.gd" id="2_qdef7"]
+
+[sub_resource type="Resource" id="Resource_fowmd"]
+script = ExtResource("1_bpas5")
+id = &"paradox_0_pulse"
+display_name = "Placeholder Pulse"
+description = ""
+kind = 3
+cooldown = 8.0
+damage = 24.0
+reach = 6.0
+radius = 5.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 4.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(1, 0.4, 0.9, 1)
+
+[sub_resource type="Resource" id="Resource_n04jp"]
+script = ExtResource("1_bpas5")
+id = &"paradox_0_dash"
+display_name = "Placeholder Dash"
+description = ""
+kind = 2
+cooldown = 6.0
+damage = 12.0
+reach = 7.0
+radius = 0.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.2
+tick_interval = 0.5
+summon_count = 1
+knockback = 0.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(1, 0.4, 0.9, 1)
+
+[sub_resource type="Resource" id="Resource_fdnjn"]
+script = ExtResource("1_bpas5")
+id = &"paradox_0_bolt"
+display_name = "Placeholder Bolt"
+description = ""
+kind = 0
+cooldown = 0.5
+damage = 10.0
+reach = 14.0
+radius = 0.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 0.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(1, 0.4, 0.9, 1)
+
+[resource]
+script = ExtResource("2_qdef7")
+id = &"paradox_0"
+display_name = "PARADOX.0"
+tagline = "Probability and alternate projections."
+philosophy = "Risk is just another resource, if you can see the other branches."
+color = Color(1, 0.4, 0.9, 1)
+body_shape = 4
+kit_status = 1
+base_stats = {}
+primary_ability = SubResource("Resource_fdnjn")
+ability_one = SubResource("Resource_fowmd")
+ability_two = SubResource("Resource_n04jp")
+preferred_range = 9.0
+aggression = 0.45
+retreat_health_fraction = 0.25
+ability_use_enemy_count = 2
+agent_profile_id = &"conventional_ai"

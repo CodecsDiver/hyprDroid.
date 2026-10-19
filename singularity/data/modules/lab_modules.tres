@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ModuleLibrary" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/module_library.gd" id="1_tcurm"]
+
+[resource]
+script = ExtResource("1_tcurm")
+module_scene_paths = {
+"acid_pool": "res://scenes/modules/acid_pool.tscn",
+"arc_panel": "res://scenes/modules/arc_panel.tscn",
+"crate_cluster": "res://scenes/modules/crate_cluster.tscn",
+"floor_tile": "res://scenes/modules/floor_tile.tscn",
+"item_chest": "res://scenes/modules/item_chest.tscn",
+"pillar": "res://scenes/modules/pillar.tscn",
+"wall_segment": "res://scenes/modules/wall_segment.tscn"
+}

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_4njqc"]
+[ext_resource type="Script" path="res://scripts/resources/item_definition.gd" id="2_8ppqc"]
+
+[resource]
+script = ExtResource("2_8ppqc")
+id = &"cryo_lattice"
+display_name = "Cryo Lattice"
+description = "Hits can chill the target."
+rarity = 1
+max_stacks = 0
+modifiers = Array[ExtResource("1_4njqc")]([])
+proc_kind = 3
+proc_chance = 0.12
+proc_chance_cap = 0.7
+proc_value = 0.4
+proc_value_per_extra_stack = 0.0
+proc_radius = 3.0
+proc_duration = 2.0
+weight = 1.0

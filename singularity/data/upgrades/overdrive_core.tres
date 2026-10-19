@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_xg4j2"]
+[ext_resource type="Script" path="res://scripts/resources/upgrade_definition.gd" id="2_s1t2g"]
+
+[sub_resource type="Resource" id="Resource_y02rh"]
+script = ExtResource("1_xg4j2")
+stat = &"damage_multiplier"
+operation = 2
+value = 1.12
+stack_mode = 0
+hyperbolic_cap = 1.0
+
+[resource]
+script = ExtResource("2_s1t2g")
+id = &"overdrive_core"
+display_name = "Overdrive Core"
+description = "Multiplicative damage boost. Requires Overclock x2."
+rarity = 2
+weight = 1.0
+max_stacks = 3
+modifiers = Array[ExtResource("1_xg4j2")]([SubResource("Resource_y02rh")])
+requires = {
+"overclock": 2
+}
+excludes = PackedStringArray()
+character_ids = PackedStringArray()
+is_fallback = false
+instant_heal_fraction = 0.0

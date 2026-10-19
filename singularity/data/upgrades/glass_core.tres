@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_ab1xs"]
+[ext_resource type="Script" path="res://scripts/resources/upgrade_definition.gd" id="2_kgio0"]
+
+[sub_resource type="Resource" id="Resource_cnfif"]
+script = ExtResource("1_ab1xs")
+stat = &"damage_multiplier"
+operation = 1
+value = 0.4
+stack_mode = 0
+hyperbolic_cap = 1.0
+
+[sub_resource type="Resource" id="Resource_mu8ld"]
+script = ExtResource("1_ab1xs")
+stat = &"max_health"
+operation = 1
+value = -0.3
+stack_mode = 0
+hyperbolic_cap = 1.0
+
+[resource]
+script = ExtResource("2_kgio0")
+id = &"glass_core"
+display_name = "Glass Core"
+description = "+40% damage, -30% max health. Excludes Hardened Core."
+rarity = 2
+weight = 1.0
+max_stacks = 1
+modifiers = Array[ExtResource("1_ab1xs")]([SubResource("Resource_cnfif"), SubResource("Resource_mu8ld")])
+requires = {}
+excludes = PackedStringArray("hardened_core")
+character_ids = PackedStringArray()
+is_fallback = false
+instant_heal_fraction = 0.0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AgentCapabilityProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/agent_capability_profile.gd" id="1_s4iir"]
+
+[resource]
+script = ExtResource("1_s4iir")
+id = &"human"
+observation_radius = 60.0
+max_observed_entities = 200
+decision_interval = 0.0
+max_commands_per_second = 0.0
+allowed_commands = PackedStringArray()
+may_select_upgrades = true
+memory_scopes = PackedStringArray()

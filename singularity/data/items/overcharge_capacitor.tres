@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ability_definition.gd" id="1_4roww"]
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="2_fiwa0"]
+[ext_resource type="Script" path="res://scripts/resources/item_definition.gd" id="3_cecpi"]
+
+[sub_resource type="Resource" id="Resource_f4852"]
+script = ExtResource("1_4roww")
+id = &"overcharge_discharge"
+display_name = "Overcharge Discharge"
+description = ""
+kind = 3
+cooldown = 40.0
+damage = 90.0
+reach = 6.0
+radius = 7.0
+arc_degrees = 90.0
+projectile_speed = 18.0
+projectile_count = 1
+projectile_spread_degrees = 12.0
+pierce = 0
+duration = 0.0
+tick_interval = 0.5
+summon_count = 1
+knockback = 10.0
+lifesteal_fraction = 0.0
+slow_strength = 0.0
+slow_duration = 0.0
+pull_strength = 0.0
+color = Color(1, 0.6, 0.15, 1)
+
+[resource]
+script = ExtResource("3_cecpi")
+id = &"overcharge_capacitor"
+display_name = "Overcharge Capacitor"
+description = "Equipment: discharge a massive shockwave."
+rarity = 2
+max_stacks = 0
+modifiers = Array[ExtResource("2_fiwa0")]([])
+proc_kind = 0
+proc_chance = 1.0
+proc_chance_cap = 1.0
+proc_value = 0.0
+proc_value_per_extra_stack = 0.0
+proc_radius = 3.0
+proc_duration = 2.0
+equipment_ability = SubResource("Resource_f4852")
+weight = 1.0

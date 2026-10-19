@@ -1,0 +1,39 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+
+config_version=5
+
+[application]
+
+config/name="SINGULARITY - Global Operations"
+config/description="Private prototype: isometric multi-agent roguelite foundation."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+Events="*res://scripts/autoload/events.gd"
+Balance="*res://scripts/autoload/balance.gd"
+Catalog="*res://scripts/autoload/catalog.gd"
+Settings="*res://scripts/autoload/settings_manager.gd"
+Profile="*res://scripts/autoload/profile_store.gd"
+Telemetry="*res://scripts/autoload/telemetry.gd"
+GameState="*res://scripts/autoload/game_state.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="actors"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

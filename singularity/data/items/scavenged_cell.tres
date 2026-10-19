@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/stat_modifier.gd" id="1_dw23n"]
+[ext_resource type="Script" path="res://scripts/resources/item_definition.gd" id="2_m1jow"]
+
+[resource]
+script = ExtResource("2_m1jow")
+id = &"scavenged_cell"
+display_name = "Scavenged Cell"
+description = "Recover charge from fallen machines."
+rarity = 0
+max_stacks = 0
+modifiers = Array[ExtResource("1_dw23n")]([])
+proc_kind = 1
+proc_chance = 1.0
+proc_chance_cap = 1.0
+proc_value = 2.0
+proc_value_per_extra_stack = 1.5
+proc_radius = 3.0
+proc_duration = 2.0
+weight = 1.0
