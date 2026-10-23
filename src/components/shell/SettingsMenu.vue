@@ -26,6 +26,8 @@ const intensities: AnimationIntensity[] = ['off', 'low', 'medium', 'high']
         <label class="toggle"><input v-model="settings.soundEnabled" type="checkbox" /> Sound effects</label>
         <label class="toggle"><input v-model="settings.screenShakeEnabled" type="checkbox" /> Screen shake</label>
         <label class="toggle"><input v-model="settings.focusMode" type="checkbox" /> Focus mode (dim side panels)</label>
+        <button class="btn is-ghost" @click="settings.resetLayout()">Reset panel sizes</button>
+        <p class="note">Drag the glowing bars between panels to resize them. Double-click a bar to reset it.</p>
         <p class="note">Intensity scales particles, glow and motion. "Off" also respects your system's reduced-motion setting.</p>
       </div>
     </div>

@@ -15,7 +15,7 @@ pub fn run() {
             runner::sandbox_status,
             runner::run_python,
             runner::run_checks,
-            windows::open_lessons_window,
+            windows::open_lab_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Python Discovery");

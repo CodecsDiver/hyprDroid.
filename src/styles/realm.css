@@ -147,6 +147,10 @@ button { font-family: inherit; color: inherit; }
   transform: rotate(45deg);
 }
 
+/* Typing-lab line feedback inside Monaco */
+.lab-line-ok { background: rgba(57, 255, 136, 0.1); box-shadow: inset 3px 0 0 var(--neon-green); }
+.lab-line-bad { background: rgba(255, 61, 110, 0.2); box-shadow: inset 3px 0 0 var(--neon-red); }
+
 /* Buttons */
 .btn {
   position: relative;

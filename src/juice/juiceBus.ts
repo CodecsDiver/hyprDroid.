@@ -9,7 +9,7 @@ export type JuiceEvent =
   | { kind: 'objective-failed' }
   | { kind: 'quest-completed'; title: string; rewardXp: number }
   | { kind: 'achievement-unlocked'; title: string }
-  | { kind: 'level-up'; level: number; rank: string }
+  | { kind: 'level-up'; level: number; rank: string; rankChanged: boolean }
   | { kind: 'project-completed'; title: string }
 
 type JuiceListener = (event: JuiceEvent) => void

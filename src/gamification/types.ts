@@ -1,7 +1,6 @@
 export type RealmEvent =
-  | { type: 'objective_met'; projectId: string; objectiveId: string }
-  | { type: 'project_completed'; projectId: string }
-  | { type: 'lesson_studied'; lessonId: string }
+  | { type: 'objective_met'; projectId: string; objectiveId: string; difficulty: number }
+  | { type: 'project_completed'; projectId: string; difficulty: number }
   | { type: 'file_saved' }
   | { type: 'code_run' }
   | { type: 'combo_peak'; combo: number }
@@ -15,7 +14,6 @@ export interface ProgressionState {
   /** `projectId/objectiveId` keys, so XP for an objective is only ever awarded once. */
   metObjectiveKeys: string[]
   completedProjectIds: string[]
-  studiedLessonIds: string[]
   completedQuestIds: string[]
   unlockedAchievementIds: string[]
 }
@@ -42,6 +40,8 @@ export interface ProgressionResult {
   completedQuests: QuestDefinition[]
   unlockedAchievements: AchievementDefinition[]
   reachedLevel: number | null
+  /** Set only together with reachedLevel: true when the level-up crosses into a new rank title. */
+  reachedNewRank: boolean
 }
 
 export function createEmptyProgression(): ProgressionState {
@@ -53,7 +53,6 @@ export function createEmptyProgression(): ProgressionState {
     bestCombo: 0,
     metObjectiveKeys: [],
     completedProjectIds: [],
-    studiedLessonIds: [],
     completedQuestIds: [],
     unlockedAchievementIds: [],
   }

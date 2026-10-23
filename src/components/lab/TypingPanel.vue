@@ -1,0 +1,264 @@
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { readProjectFile, runPython, toBackendError, writeProjectFile, type BackendError, type RunOutcome } from '../../backend/backend'
+import CodeEditor from '../editor/CodeEditor.vue'
+import { LINES_PER_CHUNK, chunkCount, chunkLines, evaluateTyping, splitCode } from '../../lab/typingCourse'
+import type { LabCourse } from '../../lab/courses'
+
+const props = defineProps<{ course: LabCourse; fontSize: number }>()
+
+const FILE_NAME = 'main.py'
+const AUTOSAVE_DELAY_MS = 600
+
+const projectId = computed(() => `lab-${props.course.id}`)
+const expectedLines = computed(() => splitCode(props.course.code))
+const totalChunks = computed(() => chunkCount(expectedLines.value.length))
+
+const typedText = ref('')
+const isLoaded = ref(false)
+const saveError = ref<BackendError | null>(null)
+const runOutcome = ref<RunOutcome | null>(null)
+const runError = ref<BackendError | null>(null)
+const isRunning = ref(false)
+const justUnlockedChunk = ref<number | null>(null)
+const confirmingRestart = ref(false)
+const editor = ref<InstanceType<typeof CodeEditor>>()
+let saveTimer: ReturnType<typeof setTimeout> | undefined
+let loadToken = 0
+let previousUnlocked = 1
+
+const evaluation = computed(() => evaluateTyping(expectedLines.value, typedText.value))
+/** The chunk being typed right now (zero-based). */
+const activeChunk = computed(() => Math.min(evaluation.value.unlockedChunks, totalChunks.value) - 1)
+const activeLines = computed(() => chunkLines(expectedLines.value, activeChunk.value))
+const activeFirstLine = computed(() => activeChunk.value * LINES_PER_CHUNK + 1)
+const progressFraction = computed(() => evaluation.value.matchedLines / expectedLines.value.length)
+
+type LineState = 'done' | 'current' | 'pending' | 'bad'
+function lineState(lineNumber: number): LineState {
+  const result = evaluation.value
+  if (lineNumber <= result.matchedLines) return 'done'
+  if (result.mismatch && result.mismatch.line === lineNumber) return 'bad'
+  if (lineNumber === result.matchedLines + 1) return 'current'
+  return 'pending'
+}
+
+async function loadFile(): Promise<void> {
+  const token = ++loadToken
+  isLoaded.value = false
+  clearTimeout(saveTimer)
+  runOutcome.value = null
+  runError.value = null
+  saveError.value = null
+  confirmingRestart.value = false
+  try {
+    const stored = await readProjectFile(projectId.value, FILE_NAME)
+    if (token !== loadToken) return
+    typedText.value = stored ?? ''
+  } catch (error) {
+    if (token !== loadToken) return
+    saveError.value = toBackendError(error)
+    typedText.value = ''
+  }
+  previousUnlocked = evaluateTyping(expectedLines.value, typedText.value).unlockedChunks
+  justUnlockedChunk.value = null
+  isLoaded.value = true
+}
+
+async function saveNow(forProjectId = projectId.value, text = typedText.value): Promise<void> {
+  clearTimeout(saveTimer)
+  try {
+    await writeProjectFile(forProjectId, FILE_NAME, text)
+    saveError.value = null
+  } catch (error) {
+    saveError.value = toBackendError(error)
+  }
+}
+
+function onTyped(text: string): void {
+  typedText.value = text
+  runOutcome.value = null
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(saveNow, AUTOSAVE_DELAY_MS)
+}
+
+watch(
+  () => props.course.id,
+  async (_newId, oldId) => {
+    // Flush the previous course's file under ITS id before loading the new one.
+    if (oldId !== undefined && isLoaded.value) await saveNow(`lab-${oldId}`, typedText.value)
+    await loadFile()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => evaluation.value.unlockedChunks,
+  (unlocked) => {
+    if (isLoaded.value && unlocked > previousUnlocked) {
+      justUnlockedChunk.value = unlocked
+      setTimeout(() => {
+        if (justUnlockedChunk.value === unlocked) justUnlockedChunk.value = null
+      }, 2600)
+    }
+    previousUnlocked = unlocked
+  },
+)
+
+watch(
+  () => evaluation.value.marks,
+  async (marks) => {
+    await nextTick()
+    editor.value?.setLineMarks(marks)
+  },
+  { immediate: true },
+)
+
+async function run(): Promise<void> {
+  isRunning.value = true
+  runError.value = null
+  try {
+    await saveNow()
+    runOutcome.value = await runPython(projectId.value, FILE_NAME, false)
+  } catch (error) {
+    const backendError = toBackendError(error)
+    runError.value = backendError.code === 'containment-unavailable'
+      ? { code: backendError.code, message: 'No sandbox is available for running here. Install bubblewrap (sudo apt install bubblewrap) to run your file from the lab.' }
+      : backendError
+  } finally {
+    isRunning.value = false
+  }
+}
+
+async function restart(): Promise<void> {
+  if (!confirmingRestart.value) {
+    confirmingRestart.value = true
+    setTimeout(() => (confirmingRestart.value = false), 3500)
+    return
+  }
+  typedText.value = ''
+  confirmingRestart.value = false
+  runOutcome.value = null
+  previousUnlocked = 1
+  await saveNow()
+  editor.value?.focus()
+}
+
+onBeforeUnmount(() => {
+  clearTimeout(saveTimer)
+  void saveNow()
+})
+</script>
+
+<template>
+  <section class="typing panel">
+    <header class="head">
+      <div class="title">
+        <span class="name">Type it: {{ course.title }}</span>
+        <span class="part">Part {{ activeChunk + 1 }} of {{ totalChunks }}</span>
+      </div>
+      <div class="progress" :title="`${evaluation.matchedLines} of ${expectedLines.length} lines typed correctly`">
+        <div class="progress-fill" :style="{ transform: `scaleX(${progressFraction})` }" />
+      </div>
+      <span class="lines">{{ evaluation.matchedLines }} / {{ expectedLines.length }} lines</span>
+      <button class="btn is-green" :disabled="!evaluation.isComplete || isRunning" @click="run">&#9654; Run your file</button>
+      <button class="btn is-ghost" @click="restart">{{ confirmingRestart ? 'Click again to wipe' : 'Start over' }}</button>
+    </header>
+
+    <div class="body">
+      <div class="reference" :class="{ 'just-unlocked': justUnlockedChunk !== null }">
+        <div class="chips">
+          <span
+            v-for="index in totalChunks"
+            :key="index"
+            class="chip"
+            :class="{ done: index - 1 < evaluation.completedChunks, active: index - 1 === activeChunk && !evaluation.isComplete, locked: index - 1 > activeChunk }"
+          >{{ index - 1 < evaluation.completedChunks ? '✓' : index - 1 > activeChunk ? '🔒' : '▶' }} {{ index }}</span>
+        </div>
+
+        <div v-if="evaluation.isComplete" class="finished">
+          <strong>Done: every line typed correctly.</strong>
+          <span>Press Run your file to see it work, then try the visualizer above with the same idea.</span>
+        </div>
+        <template v-else>
+          <div v-if="justUnlockedChunk !== null" class="unlocked-banner">NEXT PART UNLOCKED</div>
+          <p class="instruction">Type these {{ activeLines.length }} lines into the file on the right. Indentation counts.</p>
+          <ol class="code" :start="activeFirstLine">
+            <li v-for="(line, index) in activeLines" :key="activeChunk + ':' + index" :class="lineState(activeFirstLine + index)">
+              <span class="number">{{ activeFirstLine + index }}</span>
+              <span class="text">{{ line === '' ? ' ' : line }}</span>
+            </li>
+          </ol>
+          <div v-if="evaluation.mismatch" class="hint-bad">
+            Line {{ evaluation.mismatch.line }} does not match.
+            <div>expected <code>{{ evaluation.mismatch.expected }}</code></div>
+            <div>you typed <code>{{ evaluation.mismatch.typed || '(empty)' }}</code></div>
+          </div>
+        </template>
+
+        <div v-if="runError" class="run-box error">[{{ runError.code }}] {{ runError.message }}</div>
+        <div v-else-if="runOutcome" class="run-box">
+          <div class="run-title">OUTPUT {{ runOutcome.stdout === course.expectedOutput ? '(matches the expected result)' : '(differs from the expected result)' }}</div>
+          <pre>{{ runOutcome.stdout }}<span class="err">{{ runOutcome.stderr }}</span></pre>
+        </div>
+        <div v-if="saveError" class="run-box error">Could not save: {{ saveError.message }}</div>
+      </div>
+
+      <div class="editor">
+        <CodeEditor
+          v-if="isLoaded"
+          :key="course.id"
+          ref="editor"
+          :model-value="typedText"
+          :font-size="fontSize"
+          :effects="false"
+          plain-typing
+          @update:model-value="onTyped"
+          @save="saveNow"
+        />
+      </div>
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.typing { display: flex; flex-direction: column; min-height: 0; height: 100%; background: rgba(6, 9, 18, 0.9); }
+.head { display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-bottom: 1px solid rgba(25, 230, 255, 0.2); }
+.title { display: flex; flex-direction: column; min-width: 190px; }
+.name { font-weight: 700; color: var(--neon-cyan); }
+.part { font-size: 10px; letter-spacing: 0.2em; color: var(--neon-amber); text-transform: uppercase; }
+.progress { flex: 1; height: 8px; background: rgba(255, 255, 255, 0.08); }
+.progress-fill { height: 100%; transform-origin: left; background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan)); transition: transform 0.25s; }
+.lines { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 46%) 1fr; }
+.reference { padding: 10px 14px; overflow: auto; border-right: 1px solid rgba(25, 230, 255, 0.2); user-select: none; -webkit-user-select: none; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.chip { padding: 2px 8px; font-size: 11px; border: 1px solid rgba(113, 134, 160, 0.4); color: var(--text-dim); }
+.chip.done { color: var(--neon-green); border-color: var(--neon-green); }
+.chip.active { color: var(--neon-amber); border-color: var(--neon-amber); box-shadow: 0 0 calc(10px * var(--fx-scale)) var(--neon-amber); }
+.instruction { margin: 0 0 8px; color: var(--text-dim); font-size: 12px; }
+.code { list-style: none; margin: 0; padding: 0; font-size: 14px; line-height: 1.55; }
+.code li { display: grid; grid-template-columns: 36px 1fr; white-space: pre; padding-right: 8px; border-left: 3px solid transparent; }
+.number { color: var(--text-dim); text-align: right; padding-right: 12px; }
+.code li.done { background: rgba(57, 255, 136, 0.1); border-left-color: var(--neon-green); color: var(--neon-green); }
+.code li.current { background: rgba(255, 200, 61, 0.12); border-left-color: var(--neon-amber); color: #fff; }
+.code li.bad { background: rgba(255, 61, 110, 0.18); border-left-color: var(--neon-red); color: #fff; }
+.code li.pending { color: var(--text); }
+.hint-bad { margin-top: 10px; padding: 8px 10px; font-size: 12px; border: 1px solid var(--neon-red); color: var(--neon-red); }
+.hint-bad code { color: #fff; user-select: text; -webkit-user-select: text; white-space: pre; }
+.unlocked-banner {
+  margin-bottom: 8px; padding: 6px 10px; text-align: center; letter-spacing: 0.3em; font-weight: 900; font-size: 12px;
+  color: var(--void); background: var(--neon-green); box-shadow: var(--glow-green); animation: unlock 2.6s ease-out forwards;
+}
+@keyframes unlock { 0% { transform: scale(calc(1 + 0.5 * var(--fx-scale))); opacity: 0; } 12% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.just-unlocked .code { animation: chunk-in 0.5s cubic-bezier(0.2, 1.4, 0.3, 1); }
+@keyframes chunk-in { from { opacity: 0; transform: translateY(calc(14px * var(--fx-scale))); } to { opacity: 1; transform: none; } }
+.finished { display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid var(--neon-green); color: var(--neon-green); background: rgba(57, 255, 136, 0.08); }
+.finished span { color: var(--text); font-size: 12px; }
+.run-box { margin-top: 10px; padding: 8px 10px; border: 1px solid rgba(25, 230, 255, 0.3); user-select: text; -webkit-user-select: text; }
+.run-box.error { border-color: var(--neon-red); color: var(--neon-red); font-size: 12px; }
+.run-title { font-size: 10px; letter-spacing: 0.2em; color: var(--neon-cyan); }
+.run-box pre { margin: 4px 0 0; white-space: pre-wrap; }
+.err { color: var(--neon-red); }
+.editor { min-width: 0; min-height: 0; }
+</style>

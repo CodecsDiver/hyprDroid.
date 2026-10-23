@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const emit = defineEmits<{ studied: [] }>()
-
 interface ListNode {
   id: number
   value: number
 }
 
-const REQUIRED_OPERATIONS = 7
 const nodes = ref<ListNode[]>([
   { id: 1, value: 12 },
   { id: 2, value: 99 },
@@ -18,13 +15,10 @@ const inputValue = ref(5)
 const highlightedId = ref<number | null>(null)
 const message = ref('A linked list is nodes pointing at the next node. Try each operation.')
 let nextId = 4
-let operationCount = 0
 let walkTimer: ReturnType<typeof setTimeout> | undefined
 
 function recordOperation(description: string): void {
   message.value = description
-  operationCount++
-  if (operationCount === REQUIRED_OPERATIONS) emit('studied')
 }
 
 function prepend(): void {

@@ -1,25 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { gridSearchFrames, pointKey, type GridSearchKind } from '../algorithms/gridSearch'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
-
-const emit = defineEmits<{ studied: [] }>()
 
 const ROWS = 10
 const COLUMNS = 18
 const start = { row: 1, column: 1 }
 const goal = { row: 8, column: 16 }
 
-const kind = ref<GridSearchKind>('bfs')
+const props = defineProps<{ fixedKind?: GridSearchKind }>()
+const kind = ref<GridSearchKind>(props.fixedKind ?? 'bfs')
+watch(() => props.fixedKind, (next) => next && (kind.value = next))
 const walls = ref(new Set<string>(
   Array.from({ length: 7 }, (_, row) => `${row + 1},9`).concat(Array.from({ length: 5 }, (_, row) => `${row + 4},5`)),
 ))
 
-const player = useStepPlayer(
-  () => gridSearchFrames(kind.value, ROWS, COLUMNS, walls.value, start, goal),
-  () => emit('studied'),
-)
+const player = useStepPlayer(() => gridSearchFrames(kind.value, ROWS, COLUMNS, walls.value, start, goal))
 
 const visitedSet = computed(() => new Set(player.frame.value.visited))
 const frontierSet = computed(() => new Set(player.frame.value.frontier))
@@ -52,10 +49,11 @@ function cellClass(row: number, column: number): string {
 <template>
   <div class="viz">
     <div class="toolbar">
-      <div class="segments">
+      <div v-if="!fixedKind" class="segments">
         <button class="segment" :class="{ on: kind === 'bfs' }" @click="kind = 'bfs'">BFS &middot; queue</button>
         <button class="segment" :class="{ on: kind === 'dfs' }" @click="kind = 'dfs'">DFS &middot; stack</button>
       </div>
+      <strong v-if="fixedKind" class="kind-name">{{ kind === 'bfs' ? 'BFS · queue' : 'DFS · stack' }}</strong>
       <span class="hint">Click cells to build walls, then press Play.</span>
     </div>
 
@@ -85,6 +83,7 @@ function cellClass(row: number, column: number): string {
 .segment { padding: 8px 16px; cursor: pointer; background: transparent; border: 1px solid rgba(113, 134, 160, 0.4); color: var(--text-dim); font-size: 11px; letter-spacing: 0.1em; }
 .segment.on { color: var(--void); background: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
 .hint { color: var(--text-dim); font-size: 12px; }
+.kind-name { color: var(--neon-cyan); letter-spacing: 0.1em; }
 .grid { display: grid; gap: 2px; padding: 10px; max-width: 760px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
 .cell { aspect-ratio: 1; background: rgba(255, 255, 255, 0.04); cursor: pointer; transition: background 0.15s, transform 0.15s; }
 .cell:hover { background: rgba(255, 255, 255, 0.12); }

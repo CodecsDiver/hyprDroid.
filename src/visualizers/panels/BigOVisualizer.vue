@@ -1,16 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
-const emit = defineEmits<{ studied: [] }>()
-
-const REQUIRED_ADJUSTMENTS = 6
 const inputSize = ref(10)
-let adjustments = 0
-
-watch(inputSize, () => {
-  adjustments++
-  if (adjustments === REQUIRED_ADJUSTMENTS) emit('studied')
-})
 
 const CHART_WIDTH = 640
 const CHART_HEIGHT = 300

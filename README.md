@@ -11,10 +11,11 @@ Tauri 2 (Rust) + Vue 3 + TypeScript + Monaco.
 
 ## What is in it
 
-- **Missions**: five projects, three objectives each, checked with `unittest`. Save, Run and Check my work all go through the Rust backend.
-- **Game layer**: combo meter, keystroke particles, objective/quest/trophy banners, screen shake, synthesized sound, and a full-screen level-up sequence. The XP bar always derives level and fill from total XP, and climbs through every level.
-- **Lesson Lab**: a separate window with seven interactive visualizers (sorting x5, binary search, BFS/DFS pathfinding, recursion tree, stacks and queues, linked lists, Big-O growth). Finishing a visualizer earns XP in the main window.
-- **Settings**: animation intensity (off/low/medium/high), sound, screen shake, focus mode (dims side panels).
+- **Missions**: five projects, three objectives each, checked with `unittest`. Save, Run and Check my work all work in the desktop app and the PWA.
+- **XP rules**: XP is paid only for finished, verified work: an objective whose tests pass, and a completed project (harder projects pay more). Typing, saving and running never give XP, so a level-up always means the code was correct. Activity trophies (first run, save streak, typing combo) give no XP.
+- **Game layer**: combo meter, keystroke particles, objective/quest/trophy banners, screen shake, synthesized sound, and level-up screens that escalate: normal levels, every 5th level, new ranks, every 10th level (milestone), every 25th (legendary), each bigger, louder and longer than the last.
+- **App chrome**: File / Edit / View / Run / Go / Help menus, a command palette (F1 or Ctrl+Shift+P; Ctrl+Shift+P may be reserved by Firefox), keyboard shortcuts (Help > Keyboard shortcuts), import/export of `.py` files, editor zoom, and resizable, hideable panels (drag the glowing bars; double-click a bar to reset).
+- **Visualizer Lab**: a separate window with 12 courses: the five sorting algorithms plus binary search, BFS, DFS, recursion, stacks and queues, linked lists and Big-O. Each pairs an interactive visualizer with a typing course: the lab shows ten lines at a time, you type them into your own file (no pasting, exact indentation), and the next ten unlock as soon as the current ten are correct. Finish the file and run it. Nothing in the lab affects XP.
 
 ## Install as a PWA
 
@@ -31,7 +32,7 @@ Host `dist-web/` on any static server. Service workers need HTTPS (or localhost)
 
 ```
 pnpm install
-pnpm test          # frontend tests (engine, curriculum against real python3, visualizer algorithms)
+pnpm test          # engine, curriculum (real python3 and Pyodide), lab courses, commands, visualizer algorithms
 cargo test --manifest-path src-tauri/Cargo.toml
 pnpm tauri dev     # desktop app
 pnpm tauri build --bundles deb

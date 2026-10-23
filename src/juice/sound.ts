@@ -1,3 +1,4 @@
+import { describeLevelUp } from '../gamification/levelUpTier'
 import { onJuice, type JuiceEvent } from './juiceBus'
 
 /** Pentatonic ladder (Hz) so rapid typing sounds like a melody instead of noise. */
@@ -68,10 +69,17 @@ function play(event: JuiceEvent): void {
     case 'achievement-unlocked':
       arpeggio([783.99, 987.77, 1174.66, 1567.98], 0.09, 0.3, 0.08, 'sine')
       break
-    case 'level-up':
-      arpeggio([261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98], 0.075, 0.5, 0.1)
-      tone(130.81, 0, 1.4, { type: 'sawtooth', volume: 0.06, slideTo: 261.63 })
+    case 'level-up': {
+      const style = describeLevelUp(event.level, event.rankChanged)
+      const ladder = [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98, 2093, 2637, 3136]
+      const notes = ladder.slice(0, Math.min(ladder.length, 5 + style.ringCount))
+      arpeggio(notes, 0.075, 0.5, 0.1)
+      if (style.tier === 'rank' || style.tier === 'milestone' || style.tier === 'legend') {
+        arpeggio(notes.map((note) => note * 1.5), 0.075, 0.45, 0.06, 'sine')
+      }
+      tone(130.81, 0, 1.2 + style.ringCount * 0.2, { type: 'sawtooth', volume: 0.06 + style.ringCount * 0.005, slideTo: 261.63 })
       break
+    }
     case 'project-completed':
       arpeggio([392, 523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98, 2093], 0.09, 0.55, 0.1)
       break

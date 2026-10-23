@@ -7,12 +7,21 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { emitJuice } from '../../juice/juiceBus'
 import { useComboStore } from '../../stores/comboStore'
 
-const props = defineProps<{ modelValue: string; readOnly?: boolean }>()
+const props = defineProps<{
+  modelValue: string
+  readOnly?: boolean
+  fontSize?: number
+  /** Combo meter, particles and sound on keystrokes. Off in the typing lab. */
+  effects?: boolean
+  /** Typing-practice mode: no pasting, no auto-indent, so the student types every character. */
+  plainTyping?: boolean
+}>()
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   save: []
   run: []
   check: []
+  palette: []
 }>()
 
 ;(self as unknown as { MonacoEnvironment: monaco.Environment }).MonacoEnvironment = {
@@ -25,6 +34,7 @@ const container = ref<HTMLDivElement>()
 let editor: monaco.editor.IStandaloneCodeEditor | undefined
 let isApplyingExternalValue = false
 let lastBurstAt = 0
+let lineMarks: monaco.editor.IEditorDecorationsCollection | undefined
 
 monaco.editor.defineTheme(REALM_THEME, {
   base: 'vs-dark',
@@ -77,8 +87,8 @@ onMounted(() => {
     theme: REALM_THEME,
     readOnly: props.readOnly,
     fontFamily: "'JetBrains Mono', 'Fira Code', 'DejaVu Sans Mono', monospace",
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: props.fontSize ?? 15,
+    lineHeight: Math.round((props.fontSize ?? 15) * 1.6),
     fontLigatures: true,
     minimap: { enabled: false },
     automaticLayout: true,
@@ -114,12 +124,27 @@ onMounted(() => {
     formatOnPaste: false,
     links: false,
     contextmenu: false,
+    autoIndent: props.plainTyping ? 'none' : 'advanced',
+    detectIndentation: false,
+    insertSpaces: true,
+    tabSize: 4,
   })
+
+  if (props.plainTyping) {
+    for (const eventName of ['paste', 'drop'] as const) {
+      container.value!.addEventListener(eventName, (event) => event.preventDefault(), true)
+    }
+    // Monaco can also paste through its own clipboard commands, so neutralise the keys and undo anything that lands.
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => undefined)
+    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Insert, () => undefined)
+    editor.onDidPaste(() => editor?.trigger('plain-typing', 'undo', null))
+  }
+  lineMarks = editor.createDecorationsCollection()
 
   editor.onDidChangeModelContent((change) => {
     if (isApplyingExternalValue) return
     emit('update:modelValue', editor!.getValue())
-    if (change.isFlush) return
+    if (change.isFlush || props.effects === false) return
     combo.registerKeystroke()
     emitKeystrokeBurst()
   })
@@ -128,6 +153,9 @@ onMounted(() => {
   editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyS, () => emit('save'))
   editor.addCommand(KeyMod.CtrlCmd | KeyCode.Enter, () => emit('run'))
   editor.addCommand(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.Enter, () => emit('check'))
+  // Replace Monaco's own palette with the app's.
+  editor.addCommand(KeyCode.F1, () => emit('palette'))
+  editor.addCommand(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyP, () => emit('palette'))
   editor.focus()
 })
 
@@ -141,7 +169,28 @@ watch(
   },
 )
 
-defineExpose({ focus: () => editor?.focus() })
+watch(
+  () => props.fontSize,
+  (size) => {
+    if (size) editor?.updateOptions({ fontSize: size, lineHeight: Math.round(size * 1.6) })
+  },
+)
+
+defineExpose({
+  focus: () => editor?.focus(),
+  setLineMarks: (marks: Array<{ line: number; kind: 'ok' | 'bad' }>) => {
+    lineMarks?.set(
+      marks.map((mark) => ({
+        range: new monaco.Range(mark.line, 1, mark.line, 1),
+        options: { isWholeLine: true, className: `lab-line-${mark.kind}` },
+      })),
+    )
+  },
+  runAction: (actionId: string) => {
+    editor?.focus()
+    editor?.trigger('menu', actionId, null)
+  },
+})
 
 onBeforeUnmount(() => editor?.dispose())
 </script>

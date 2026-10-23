@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { randomValues, SORT_ALGORITHMS, sortFrames, type SortAlgorithmId } from '../algorithms/sorting'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
 
-const emit = defineEmits<{ studied: [] }>()
-
-const algorithm = ref<SortAlgorithmId>('bubble')
+const props = defineProps<{ fixedAlgorithm?: SortAlgorithmId }>()
+const algorithm = ref<SortAlgorithmId>(props.fixedAlgorithm ?? 'bubble')
+watch(() => props.fixedAlgorithm, (next) => next && (algorithm.value = next))
 const size = ref(18)
 const values = ref(randomValues(size.value))
 
 const frames = computed(() => sortFrames(algorithm.value, values.value))
-const player = useStepPlayer(() => frames.value, () => emit('studied'))
+const player = useStepPlayer(() => frames.value)
 const algorithmInfo = computed(() => SORT_ALGORITHMS.find((entry) => entry.id === algorithm.value)!)
 
 function shuffle(): void {
@@ -29,7 +29,7 @@ function barClass(index: number): string {
 <template>
   <div class="viz">
     <div class="toolbar">
-      <label>ALGORITHM
+      <label v-if="!fixedAlgorithm">ALGORITHM
         <select v-model="algorithm">
           <option v-for="entry in SORT_ALGORITHMS" :key="entry.id" :value="entry.id">{{ entry.label }}</option>
         </select>
@@ -38,6 +38,7 @@ function barClass(index: number): string {
         <input v-model.number="size" type="range" min="6" max="40" @input="shuffle" />
       </label>
       <button class="btn is-ghost" @click="shuffle">Shuffle</button>
+      <strong v-if="fixedAlgorithm" class="algorithm-name">{{ algorithmInfo.label }}</strong>
       <span class="complexity">{{ algorithmInfo.complexity }}</span>
     </div>
 
@@ -63,6 +64,7 @@ function barClass(index: number): string {
 .toolbar label { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.18em; color: var(--text-dim); }
 select { background: var(--hull-raised); color: var(--text); border: 1px solid var(--glass-edge); padding: 6px 10px; font-family: inherit; }
 input[type='range'] { accent-color: var(--neon-violet); }
+.algorithm-name { color: var(--neon-cyan); letter-spacing: 0.1em; }
 .complexity { margin-left: auto; color: var(--neon-amber); font-weight: 700; }
 .stage { flex: 1; min-height: 220px; display: flex; align-items: flex-end; gap: 2px; padding: 12px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
 .bar { position: relative; background: linear-gradient(180deg, var(--neon-violet), rgba(164, 92, 255, 0.35)); transition: height 0.12s, background 0.12s; }

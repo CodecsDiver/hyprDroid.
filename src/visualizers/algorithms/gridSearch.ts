@@ -29,7 +29,7 @@ const DIRECTIONS: ReadonlyArray<GridPoint> = [
 
 /**
  * Breadth-first search uses a queue (take from the front); depth-first uses a stack (take from the back).
- * That single difference is the whole lesson.
+ * That single difference is the whole idea.
  */
 export function gridSearchFrames(
   kind: GridSearchKind,

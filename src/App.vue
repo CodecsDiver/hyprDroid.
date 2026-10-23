@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { isNativeRuntime } from './backend/backend'
-import LessonLabView from './views/LessonLabView.vue'
+import VisualizerLabView from './views/VisualizerLabView.vue'
 import WorkspaceView from './views/WorkspaceView.vue'
 
-const LESSONS_WINDOW_LABEL = 'lessons'
+const LAB_WINDOW_LABEL = 'lab'
 
-const isLessonLab = isNativeRuntime()
-  ? getCurrentWindow().label === LESSONS_WINDOW_LABEL
-  : new URLSearchParams(location.search).get('view') === 'lessons'
+const isVisualizerLab = isNativeRuntime()
+  ? getCurrentWindow().label === LAB_WINDOW_LABEL
+  : new URLSearchParams(location.search).get('view') === 'lab'
 </script>
 
 <template>
-  <LessonLabView v-if="isLessonLab" />
+  <VisualizerLabView v-if="isVisualizerLab" />
   <WorkspaceView v-else />
 </template>

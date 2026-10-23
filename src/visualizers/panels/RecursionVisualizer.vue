@@ -4,11 +4,9 @@ import { fibonacciFrames, type CallNode } from '../algorithms/recursion'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
 
-const emit = defineEmits<{ studied: [] }>()
-
 const n = ref(5)
 const frames = computed(() => fibonacciFrames(n.value))
-const player = useStepPlayer(() => frames.value, () => emit('studied'))
+const player = useStepPlayer(() => frames.value)
 
 const NODE_SPACING_X = 56
 const NODE_SPACING_Y = 62

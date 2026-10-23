@@ -1,54 +1,95 @@
 import { describe, expect, it } from 'vitest'
-import { applyRealmEvent, XP_REWARDS } from './progressionEngine'
+import { applyRealmEvent, objectiveXp, projectCompletionXp } from './progressionEngine'
 import { createEmptyProgression } from './types'
 import { describeLevelProgress, levelForTotalXp, totalXpRequiredForLevel } from './xpCurve'
 
-const objectiveEvent = (objectiveId: string) =>
-  ({ type: 'objective_met', projectId: 'p1', objectiveId }) as const
+const objectiveEvent = (objectiveId: string, difficulty = 1) =>
+  ({ type: 'objective_met', projectId: 'p1', objectiveId, difficulty }) as const
 
-describe('applyRealmEvent', () => {
+describe('XP only comes from verified work', () => {
+  it('gives no XP for saving, running or typing streaks, however often', () => {
+    let state = createEmptyProgression()
+    for (let count = 0; count < 200; count++) {
+      state = applyRealmEvent(state, { type: 'file_saved' }).state
+      state = applyRealmEvent(state, { type: 'code_run' }).state
+      state = applyRealmEvent(state, { type: 'combo_peak', combo: 10 + count }).state
+    }
+    expect(state.totalXp).toBe(0)
+    expect(levelForTotalXp(state.totalXp)).toBe(1)
+    expect(state.fileSaveCount).toBe(200)
+  })
+
+  it('never reports a level-up or quest XP for unverified activity', () => {
+    const result = applyRealmEvent(createEmptyProgression(), { type: 'combo_peak', combo: 500 })
+    expect(result.reachedLevel).toBeNull()
+    expect(result.gainedXp).toBe(0)
+    expect(result.completedQuests).toEqual([])
+  })
+
   it('awards objective XP exactly once per objective', () => {
     const first = applyRealmEvent(createEmptyProgression(), objectiveEvent('a'))
-    expect(first.state.totalXp).toBe(XP_REWARDS.objectiveMet)
+    expect(first.state.totalXp).toBe(objectiveXp(1))
     const repeated = applyRealmEvent(first.state, objectiveEvent('a'))
     expect(repeated.gainedXp).toBe(0)
     expect(repeated.state.totalXp).toBe(first.state.totalXp)
   })
 
+  it('pays more for harder projects', () => {
+    expect(objectiveXp(5)).toBeGreaterThan(objectiveXp(1))
+    expect(projectCompletionXp(5)).toBeGreaterThan(projectCompletionXp(1))
+    const easy = applyRealmEvent(createEmptyProgression(), objectiveEvent('a', 1))
+    const hard = applyRealmEvent(createEmptyProgression(), objectiveEvent('a', 5))
+    expect(hard.gainedXp).toBeGreaterThan(easy.gainedXp)
+  })
+
+  it('awards project completion once', () => {
+    const first = applyRealmEvent(createEmptyProgression(), { type: 'project_completed', projectId: 'p1', difficulty: 2 })
+    expect(first.state.totalXp).toBeGreaterThanOrEqual(projectCompletionXp(2))
+    const second = applyRealmEvent(first.state, { type: 'project_completed', projectId: 'p1', difficulty: 2 })
+    expect(second.gainedXp).toBe(0)
+  })
+})
+
+describe('applyRealmEvent', () => {
   it('does not mutate its input', () => {
     const state = createEmptyProgression()
     const snapshot = JSON.stringify(state)
-    applyRealmEvent(state, { type: 'file_saved' })
+    applyRealmEvent(state, objectiveEvent('a'))
     expect(JSON.stringify(state)).toBe(snapshot)
   })
 
   it('completes a quest once and adds its reward to the gained XP', () => {
-    const first = applyRealmEvent(createEmptyProgression(), { type: 'code_run' })
-    expect(first.completedQuests.map((quest) => quest.id)).toEqual(['first-spark'])
-    expect(first.gainedXp).toBe(XP_REWARDS.codeRun + 20)
-    const second = applyRealmEvent(first.state, { type: 'code_run' })
-    expect(second.completedQuests).toEqual([])
+    let state = createEmptyProgression()
+    state = applyRealmEvent(state, objectiveEvent('a')).state
+    state = applyRealmEvent(state, objectiveEvent('b')).state
+    const third = applyRealmEvent(state, objectiveEvent('c'))
+    expect(third.completedQuests.map((quest) => quest.id)).toEqual(['proof-of-work'])
+    expect(third.gainedXp).toBe(objectiveXp(1) + 60)
+    const fourth = applyRealmEvent(third.state, objectiveEvent('d'))
+    expect(fourth.completedQuests).toEqual([])
   })
 
-  it('reports level-ups across repeated events and keeps climbing past level 1', () => {
+  it('reports level-ups in order, keeps climbing past level 1, and flags rank changes', () => {
     let state = createEmptyProgression()
     const reached: number[] = []
-    for (let step = 0; step < 40; step++) {
-      const result = applyRealmEvent(state, objectiveEvent(`objective-${step}`))
+    let sawRankChange = false
+    for (let step = 0; step < 60; step++) {
+      const result = applyRealmEvent(state, objectiveEvent(`objective-${step}`, 3))
       if (result.reachedLevel) reached.push(result.reachedLevel)
+      sawRankChange ||= result.reachedNewRank
       state = result.state
     }
     expect(reached[0]).toBe(2)
-    expect(reached.length).toBeGreaterThan(3)
+    expect(reached.length).toBeGreaterThan(4)
     expect(reached).toEqual([...reached].sort((a, b) => a - b))
+    expect(sawRankChange).toBe(true)
   })
 
-  it('tracks the best combo and unlocks achievements', () => {
+  it('unlocks activity trophies without paying XP', () => {
     const peak = applyRealmEvent(createEmptyProgression(), { type: 'combo_peak', combo: 41 })
     expect(peak.state.bestCombo).toBe(41)
-    expect(peak.completedQuests.map((quest) => quest.id)).toContain('flow-state')
-    const rich = applyRealmEvent({ ...createEmptyProgression(), totalXp: 99 }, { type: 'file_saved' })
-    expect(rich.unlockedAchievements.map((a) => a.id)).toContain('initiate')
+    expect(peak.unlockedAchievements.map((a) => a.id)).toContain('flow-state')
+    expect(peak.gainedXp).toBe(0)
   })
 })
 

@@ -118,6 +118,20 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  function reportError(error: BackendError): void {
+    output.value = { kind: 'error', error }
+  }
+
+  function clearOutput(): void {
+    output.value = { kind: 'empty' }
+  }
+
+  async function goToMissionOffset(offset: number): Promise<void> {
+    const index = PROJECTS.findIndex((project) => project.id === selectedProjectId.value)
+    const target = PROJECTS[(index + offset + PROJECTS.length) % PROJECTS.length]
+    await selectProject(target.id)
+  }
+
   function requestUnsandboxedConsent(): Promise<boolean> {
     return new Promise((resolve) => {
       consentRequest.value = { resolve }
@@ -215,20 +229,20 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const isNew = !progression.hasMetObjective(project.id, objective.id)
       if (!isNew) continue
       emitJuice({ kind: 'objective-met', title: objective.title })
-      progression.record({ type: 'objective_met', projectId: project.id, objectiveId: objective.id })
+      progression.record({ type: 'objective_met', projectId: project.id, objectiveId: objective.id, difficulty: project.difficulty })
       await wait(OBJECTIVE_REVEAL_STAGGER_MS)
     }
     if (anyFailed) emitJuice({ kind: 'objective-failed' })
     const allPassed = !anyFailed
     if (allPassed && !progression.hasCompletedProject(project.id)) {
       emitJuice({ kind: 'project-completed', title: project.title })
-      progression.record({ type: 'project_completed', projectId: project.id })
+      progression.record({ type: 'project_completed', projectId: project.id, difficulty: project.difficulty })
     }
   }
 
   return {
     selectedProjectId, selectedProject, code, savedCode, isDirty, isProjectLoaded, lastSavedAt, saveError,
     isSaving, isRunning, isChecking, isBusy, output, objectiveResults, sandbox, consentRequest,
-    metObjectiveCount, initialize, selectProject, updateCode, save, run, checkWork, answerConsent,
+    metObjectiveCount, initialize, selectProject, clearOutput, reportError, goToMissionOffset, updateCode, save, run, checkWork, answerConsent,
   }
 })

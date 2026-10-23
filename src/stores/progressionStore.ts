@@ -47,14 +47,19 @@ export const useProgressionStore = defineStore('progression', () => {
       emitJuice({ kind: 'achievement-unlocked', title: achievement.title })
     }
     if (result.reachedLevel !== null) {
-      emitJuice({ kind: 'level-up', level: result.reachedLevel, rank: rankTitleForLevel(result.reachedLevel) })
+      emitJuice({
+        kind: 'level-up',
+        level: result.reachedLevel,
+        rank: rankTitleForLevel(result.reachedLevel),
+        rankChanged: result.reachedNewRank,
+      })
     }
   }
 
   function record(event: RealmEvent): ProgressionResult {
     const result = applyRealmEvent(state.value, event)
     state.value = result.state
-    if (result.gainedXp > 0 || result.completedQuests.length > 0 || event.type === 'combo_peak') {
+    if (result.gainedXp > 0 || result.completedQuests.length > 0 || result.unlockedAchievements.length > 0 || event.type !== 'combo_peak') {
       persist(result.state)
     }
     announce(result)

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { describeLevelUp } from '../../gamification/levelUpTier'
 import { onJuice, type JuiceEvent } from '../../juice/juiceBus'
 import {
   createParticleField,
@@ -44,13 +45,13 @@ function flashScreen(color: string): void {
   flash.value = { id: ++flashCounter, color }
 }
 
-function fireworks(rounds: number): void {
+function fireworks(rounds: number, hues: number[] = [HUE_GREEN, HUE_CYAN, HUE_VIOLET, HUE_AMBER], particleScale = 1): void {
   for (let round = 0; round < rounds; round++) {
     later(round * 260, () => {
       const x = window.innerWidth * (0.15 + Math.random() * 0.7)
       const y = window.innerHeight * (0.15 + Math.random() * 0.45)
-      field?.burst(x, y, { count: 90, hues: [HUE_GREEN, HUE_CYAN, HUE_VIOLET, HUE_AMBER], speed: 520, size: 4 })
-      field?.ring(x, y, [HUE_GREEN, HUE_CYAN, HUE_VIOLET][round % 3], 160)
+      field?.burst(x, y, { count: Math.round(90 * particleScale), hues, speed: 520, size: 4 })
+      field?.ring(x, y, hues[round % hues.length], 160)
     })
   }
 }
@@ -104,18 +105,20 @@ function handle(event: JuiceEvent): void {
       shake(5, 360)
       break
     }
-    case 'level-up':
+    case 'level-up': {
+      const style = describeLevelUp(event.level, event.rankChanged)
       later(780, () => {
         flashScreen('rgba(255, 255, 255, 0.55)')
-        shake(16, 700)
+        shake(16 * style.shakeScale, 600 + style.ringCount * 60)
         const { x, y } = centerOf('.level-up-core')
-        field?.burst(x, y, { count: 220, hues: [HUE_GREEN, HUE_CYAN, HUE_VIOLET, HUE_AMBER], speed: 760, size: 5 })
-        field?.ring(x, y, HUE_CYAN, 420)
-        later(180, () => field?.ring(x, y, HUE_VIOLET, 560))
-        later(360, () => field?.ring(x, y, HUE_GREEN, 700))
-        fireworks(5)
+        field?.burst(x, y, { count: Math.round(220 * style.particleScale), hues: style.hues, speed: 760, size: 5 })
+        for (let ring = 0; ring < style.ringCount; ring++) {
+          later(ring * 180, () => field?.ring(x, y, style.hues[ring % style.hues.length], 420 + ring * 90))
+        }
+        fireworks(style.fireworkRounds, style.hues, style.particleScale)
       })
       break
+    }
     case 'project-completed':
       flashScreen('rgba(164, 92, 255, 0.28)')
       shake(12, 600)

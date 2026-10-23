@@ -135,10 +135,10 @@ export async function runChecks(
   return invoke<RunOutcome>('run_checks', { projectId, testSource, nonce, allowUnsandboxed })
 }
 
-export async function openLessonsWindow(): Promise<void> {
+export async function openLabWindow(): Promise<void> {
   if (!isNativeRuntime()) {
-    window.open(`${location.pathname}?view=lessons`, 'pydisc-lessons', 'width=1240,height=820')
+    window.open(`${location.pathname}?view=lab`, 'pydisc-lab', 'width=1240,height=820')
     return
   }
-  await invoke('open_lessons_window')
+  await invoke('open_lab_window')
 }

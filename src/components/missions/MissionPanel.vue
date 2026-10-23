@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PROJECTS } from '../../curriculum/projects'
+import { objectiveXp } from '../../gamification/progressionEngine'
 import { useProgressionStore } from '../../stores/progressionStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 
@@ -66,7 +67,7 @@ const difficultyBars = (difficulty: number) => Array.from({ length: 5 }, (_, ind
             <template v-else>{{ objective.hint }}</template>
           </div>
         </div>
-        <span class="reward">+40</span>
+        <span class="reward">+{{ objectiveXp(workspace.selectedProject.difficulty) }}</span>
       </div>
     </div>
   </aside>

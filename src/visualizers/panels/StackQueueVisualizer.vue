@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const emit = defineEmits<{ studied: [] }>()
-
-const REQUIRED_OPERATIONS = 8
 const stack = ref<number[]>([3, 7])
 const queue = ref<number[]>([3, 7])
 const nextValue = ref(10)
 const lastOperation = ref('Try pushing, popping, enqueueing and dequeueing.')
-let operationCount = 0
 
 function countOperation(description: string): void {
   lastOperation.value = description
-  operationCount++
-  if (operationCount === REQUIRED_OPERATIONS) emit('studied')
 }
 
 function takeValue(): number {

@@ -4,12 +4,10 @@ import { binarySearchFrames } from '../algorithms/binarySearch'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
 
-const emit = defineEmits<{ studied: [] }>()
-
-const sortedValues = Array.from({ length: 31 }, (_, index) => 3 + index * 3 + (index % 4))
+const sortedValues = Array.from({ length: 31 }, (_, index) => 2 + index * 3)
 const target = ref(sortedValues[22])
 
-const player = useStepPlayer(() => binarySearchFrames(sortedValues, target.value), () => emit('studied'))
+const player = useStepPlayer(() => binarySearchFrames(sortedValues, target.value))
 
 function pickRandomTarget(): void {
   const presentValue = sortedValues[Math.floor(Math.random() * sortedValues.length)]
