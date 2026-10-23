@@ -1,6 +1,6 @@
 [package]
 name = "python_discovery"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local-first, gamified Python learning editor"
 edition = "2021"
 

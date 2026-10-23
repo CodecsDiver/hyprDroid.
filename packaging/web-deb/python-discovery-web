@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Starts the local server if it is not running, then opens Python Discovery in an app window.
+set -u
+PORT=4173
+URL="http://localhost:${PORT}/"
+SERVER=/usr/lib/python-discovery-web/server.py
+APP_DIR=/usr/share/python-discovery-web/app
+
+port_is_open() { (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; }
+
+if ! port_is_open; then
+  nohup python3 "$SERVER" "$PORT" "$APP_DIR" >/dev/null 2>&1 &
+  for _ in $(seq 1 50); do port_is_open && break; sleep 0.1; done
+fi
+
+if [ "${1:-}" = "--serve-only" ]; then exit 0; fi
+
+# Chromium-based browsers can install this as a PWA and open it in its own window.
+for browser in chromium chromium-browser google-chrome-stable google-chrome brave-browser microsoft-edge-stable; do
+  if command -v "$browser" >/dev/null 2>&1; then exec "$browser" --app="$URL"; fi
+done
+if command -v flatpak >/dev/null 2>&1; then
+  for app in org.chromium.Chromium com.google.Chrome com.brave.Browser com.microsoft.Edge; do
+    if flatpak info "$app" >/dev/null 2>&1; then exec flatpak run "$app" --app="$URL"; fi
+  done
+fi
+echo "No Chromium-based browser found. Opening in the default browser (it will run in a tab; Firefox cannot install PWAs)." >&2
+exec xdg-open "$URL"

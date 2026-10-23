@@ -6,6 +6,7 @@ import { isNativeRuntime } from '../../backend/backend'
 import { useUiStore } from '../../stores/uiStore'
 
 const ui = useUiStore()
+const appVersion = __APP_VERSION__
 const commands = inject(APP_COMMANDS_KEY, [] as AppCommand[])
 const shortcutRows = computed(() => commands.filter((command) => command.shortcuts?.length))
 
@@ -35,7 +36,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       <div class="panel-title">About Python Discovery</div>
       <div class="content">
         <p>A local-first, gamified Python learning editor. You write every line; only verified objectives earn XP.</p>
-        <p class="dim">Version 0.2.0 &middot; {{ isNativeRuntime() ? 'Desktop app (system Python in bubblewrap)' : 'Web app (Python in WebAssembly)' }}</p>
+        <p class="dim">Version {{ appVersion }} &middot; {{ isNativeRuntime() ? 'Desktop app (system Python in bubblewrap)' : 'Web app (Python in WebAssembly)' }}</p>
         <div class="actions"><button class="btn is-ghost" @click="ui.closeDialog(false)">Close</button></div>
       </div>
     </div>

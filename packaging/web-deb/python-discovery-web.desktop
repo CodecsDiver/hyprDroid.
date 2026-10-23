@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Python Discovery (web)
+Comment=Local-first, gamified Python learning editor
+Exec=python-discovery-web
+Icon=python-discovery-web
+Terminal=false
+Categories=Education;Development;
+StartupWMClass=localhost__

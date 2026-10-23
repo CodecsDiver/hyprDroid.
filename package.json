@@ -1,15 +1,16 @@
 {
   "name": "python-discovery",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "node scripts/copy-pyodide.mjs && vite",
     "build": "vue-tsc --noEmit && vite build --mode tauri",
-    "build:web": "node scripts/copy-pyodide.mjs && vue-tsc --noEmit && vite build --mode web --outDir dist-web --emptyOutDir",
+    "build:web": "node scripts/copy-pyodide.mjs && vue-tsc --noEmit && vite build --mode web --outDir dist-web --emptyOutDir && node scripts/stamp-sw.mjs dist-web/sw.js",
     "preview:web": "vite preview --outDir dist-web --port 4173 --host",
     "test": "vitest run",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:web-deb": "pnpm build:web && bash scripts/build-web-deb.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

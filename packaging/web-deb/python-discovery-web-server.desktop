@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Python Discovery web server
+Comment=Serves Python Discovery on localhost:4173 so the installed web app can update itself
+Exec=/usr/bin/python-discovery-web --serve-only
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
