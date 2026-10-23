@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
 import { gridSearchFrames, pointKey, type GridSearchKind } from '../algorithms/gridSearch'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
@@ -17,6 +18,15 @@ const walls = ref(new Set<string>(
 ))
 
 const player = useStepPlayer(() => gridSearchFrames(kind.value, ROWS, COLUMNS, walls.value, start, goal))
+
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  watch(replayRequest, async () => {
+    await nextTick()
+    player.restart()
+    player.play()
+  })
+}
 
 const visitedSet = computed(() => new Set(player.frame.value.visited))
 const frontierSet = computed(() => new Set(player.frame.value.frontier))

@@ -1,20 +1,41 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { randomValues, SORT_ALGORITHMS, sortFrames, type SortAlgorithmId } from '../algorithms/sorting'
+import { computed, inject, nextTick, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
+import { randomValues, SORT_ALGORITHMS, sortFrames, type SortAlgorithmId, type SortFrame } from '../algorithms/sorting'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
 
-const props = defineProps<{ fixedAlgorithm?: SortAlgorithmId }>()
+const props = defineProps<{
+  fixedAlgorithm?: SortAlgorithmId
+  /** Frames recorded from the student's own code. When present they replace the built-in animation. */
+  traceFrames?: SortFrame[] | null
+}>()
 const algorithm = ref<SortAlgorithmId>(props.fixedAlgorithm ?? 'bubble')
 watch(() => props.fixedAlgorithm, (next) => next && (algorithm.value = next))
 const size = ref(18)
 const values = ref(randomValues(size.value))
 
-const frames = computed(() => sortFrames(algorithm.value, values.value))
+const usingStudentCode = ref(!!props.traceFrames)
+watch(() => props.traceFrames, (next) => (usingStudentCode.value = !!next))
+
+const frames = computed(() =>
+  usingStudentCode.value && props.traceFrames ? props.traceFrames : sortFrames(algorithm.value, values.value),
+)
 const player = useStepPlayer(() => frames.value)
+const largestValue = computed(() => Math.max(1, ...frames.value[0].values))
+
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  watch(replayRequest, async () => {
+    await nextTick()
+    player.restart()
+    player.play()
+  })
+}
 const algorithmInfo = computed(() => SORT_ALGORITHMS.find((entry) => entry.id === algorithm.value)!)
 
 function shuffle(): void {
+  usingStudentCode.value = false
   values.value = randomValues(size.value)
 }
 
@@ -39,6 +60,7 @@ function barClass(index: number): string {
       </label>
       <button class="btn is-ghost" @click="shuffle">Shuffle</button>
       <strong v-if="fixedAlgorithm" class="algorithm-name">{{ algorithmInfo.label }}</strong>
+      <span v-if="usingStudentCode" class="your-code">PLAYING YOUR CODE</span>
       <span class="complexity">{{ algorithmInfo.complexity }}</span>
     </div>
 
@@ -48,7 +70,7 @@ function barClass(index: number): string {
         :key="index"
         class="bar"
         :class="barClass(index)"
-        :style="{ height: `${value}%`, width: `${100 / player.frame.value.values.length}%` }"
+        :style="{ height: `${Math.max(4, (value / largestValue) * 100)}%`, width: `${100 / player.frame.value.values.length}%` }"
       >
         <span v-if="player.frame.value.values.length <= 20" class="bar-label">{{ value }}</span>
       </div>
@@ -65,6 +87,7 @@ function barClass(index: number): string {
 select { background: var(--hull-raised); color: var(--text); border: 1px solid var(--glass-edge); padding: 6px 10px; font-family: inherit; }
 input[type='range'] { accent-color: var(--neon-violet); }
 .algorithm-name { color: var(--neon-cyan); letter-spacing: 0.1em; }
+.your-code { padding: 2px 8px; font-size: 10px; letter-spacing: 0.2em; font-weight: 700; color: var(--void); background: var(--neon-green); box-shadow: var(--glow-green); }
 .complexity { margin-left: auto; color: var(--neon-amber); font-weight: 700; }
 .stage { flex: 1; min-height: 220px; display: flex; align-items: flex-end; gap: 2px; padding: 12px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
 .bar { position: relative; background: linear-gradient(180deg, var(--neon-violet), rgba(164, 92, 255, 0.35)); transition: height 0.12s, background 0.12s; }

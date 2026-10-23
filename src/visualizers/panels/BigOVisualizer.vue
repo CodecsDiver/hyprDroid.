@@ -1,7 +1,23 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
 
 const inputSize = ref(10)
+
+let sweepTimer: ReturnType<typeof setInterval> | undefined
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  // Sweeps the input size from 1 to 30 so every curve takes off in turn.
+  watch(replayRequest, () => {
+    clearInterval(sweepTimer)
+    inputSize.value = 1
+    sweepTimer = setInterval(() => {
+      inputSize.value += 1
+      if (inputSize.value >= 30) clearInterval(sweepTimer)
+    }, 110)
+  })
+}
+onBeforeUnmount(() => clearInterval(sweepTimer))
 
 const CHART_WIDTH = 640
 const CHART_HEIGHT = 300

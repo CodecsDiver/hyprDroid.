@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import type { TraceMode } from './traceRunner'
 import BigOVisualizer from '../visualizers/panels/BigOVisualizer.vue'
 import BinarySearchVisualizer from '../visualizers/panels/BinarySearchVisualizer.vue'
 import GridSearchVisualizer from '../visualizers/panels/GridSearchVisualizer.vue'
@@ -16,6 +17,8 @@ export interface LabCourse {
   visualizerProps?: Record<string, unknown>
   /** The code the student types, ten lines at a time. */
   code: string
+  /** When set, Run also traces the student's own code and the visualizer plays what it really did. */
+  trace?: TraceMode
   /** What the finished file prints, used for the tests and shown after Run. */
   expectedOutput: string
 }
@@ -23,7 +26,7 @@ export interface LabCourse {
 export const LAB_COURSES: LabCourse[] = [
   {
     id: 'sort-bubble', group: 'Sorting', title: 'Bubble sort', tagline: 'Swap neighbours until nothing moves',
-    visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'bubble' },
+    trace: 'items', visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'bubble' },
     code: `def bubble_sort(values):
     items = list(values)
     count = len(items)
@@ -45,7 +48,7 @@ print(bubble_sort([]))
   },
   {
     id: 'sort-insertion', group: 'Sorting', title: 'Insertion sort', tagline: 'Slide each item left into place',
-    visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'insertion' },
+    trace: 'items', visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'insertion' },
     code: `def insertion_sort(values):
     items = list(values)
     for current in range(1, len(items)):
@@ -65,7 +68,7 @@ print(insertion_sort([3, 3, 1]))
   },
   {
     id: 'sort-selection', group: 'Sorting', title: 'Selection sort', tagline: 'Pick the smallest, put it first',
-    visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'selection' },
+    trace: 'items', visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'selection' },
     code: `def selection_sort(values):
     items = list(values)
     for start in range(len(items) - 1):
@@ -85,7 +88,7 @@ print(selection_sort([2, 1]))
   },
   {
     id: 'sort-quick', group: 'Sorting', title: 'Quick sort', tagline: 'Partition around a pivot, recurse on both sides',
-    visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'quick' },
+    trace: 'items', visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'quick' },
     code: `def quick_sort(values):
     items = list(values)
     sort_range(items, 0, len(items) - 1)
@@ -113,7 +116,7 @@ print(quick_sort([]))
   },
   {
     id: 'sort-merge', group: 'Sorting', title: 'Merge sort', tagline: 'Split in half, then merge sorted halves',
-    visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'merge' },
+    trace: 'merge', visualizer: SortingVisualizer, visualizerProps: { fixedAlgorithm: 'merge' },
     code: `def merge_sort(values):
     if len(values) <= 1:
         return list(values)

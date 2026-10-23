@@ -4,8 +4,16 @@ import { readProjectFile, runPython, toBackendError, writeProjectFile, type Back
 import CodeEditor from '../editor/CodeEditor.vue'
 import { LINES_PER_CHUNK, chunkCount, chunkLines, evaluateTyping, splitCode } from '../../lab/typingCourse'
 import type { LabCourse } from '../../lab/courses'
+import { TRACE_RUNNER_FILE_NAME, buildTraceRunnerSource, parseTraceOutput } from '../../lab/traceRunner'
+import type { SortFrame } from '../../visualizers/algorithms/sorting'
 
 const props = defineProps<{ course: LabCourse; fontSize: number }>()
+const emit = defineEmits<{
+  /** The typed file for this course is (or stopped being) completely correct. */
+  completion: [courseId: string, isComplete: boolean]
+  /** Run finished. `matched` = output equals the expected output; `frames` = steps recorded from the student's own code. */
+  ran: [result: { courseId: string; matched: boolean; frames: SortFrame[] | null }]
+}>()
 
 const FILE_NAME = 'main.py'
 const AUTOSAVE_DELAY_MS = 600
@@ -16,6 +24,8 @@ const totalChunks = computed(() => chunkCount(expectedLines.value.length))
 
 const typedText = ref('')
 const isLoaded = ref(false)
+/** Which course's file is currently loaded, so a half-switched panel never reports the wrong course complete. */
+const loadedCourseId = ref('')
 const saveError = ref<BackendError | null>(null)
 const runOutcome = ref<RunOutcome | null>(null)
 const runError = ref<BackendError | null>(null)
@@ -45,6 +55,7 @@ function lineState(lineNumber: number): LineState {
 
 async function loadFile(): Promise<void> {
   const token = ++loadToken
+  const courseId = props.course.id
   isLoaded.value = false
   clearTimeout(saveTimer)
   runOutcome.value = null
@@ -62,6 +73,7 @@ async function loadFile(): Promise<void> {
   }
   previousUnlocked = evaluateTyping(expectedLines.value, typedText.value).unlockedChunks
   justUnlockedChunk.value = null
+  loadedCourseId.value = courseId
   isLoaded.value = true
 }
 
@@ -114,12 +126,36 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => [isLoaded.value, loadedCourseId.value === props.course.id, evaluation.value.isComplete] as const,
+  ([loaded, isCurrent, complete]) => {
+    if (loaded && isCurrent) emit('completion', props.course.id, complete)
+  },
+  { immediate: true },
+)
+
+/** Runs the student's file under a tracer and returns the steps their code really took, or null. */
+async function traceOwnCode(): Promise<SortFrame[] | null> {
+  if (!props.course.trace) return null
+  try {
+    await writeProjectFile(projectId.value, TRACE_RUNNER_FILE_NAME, buildTraceRunnerSource(props.course.trace))
+    const traced = await runPython(projectId.value, TRACE_RUNNER_FILE_NAME, false)
+    return parseTraceOutput(traced.stdout)
+  } catch {
+    return null
+  }
+}
+
 async function run(): Promise<void> {
   isRunning.value = true
   runError.value = null
   try {
     await saveNow()
-    runOutcome.value = await runPython(projectId.value, FILE_NAME, false)
+    const outcome = await runPython(projectId.value, FILE_NAME, false)
+    runOutcome.value = outcome
+    const matched = outcome.exitCode === 0 && !outcome.timedOut && outcome.stdout === props.course.expectedOutput
+    const frames = await traceOwnCode()
+    emit('ran', { courseId: props.course.id, matched, frames })
   } catch (error) {
     const backendError = toBackendError(error)
     runError.value = backendError.code === 'containment-unavailable'
@@ -161,7 +197,7 @@ onBeforeUnmount(() => {
         <div class="progress-fill" :style="{ transform: `scaleX(${progressFraction})` }" />
       </div>
       <span class="lines">{{ evaluation.matchedLines }} / {{ expectedLines.length }} lines</span>
-      <button class="btn is-green" :disabled="!evaluation.isComplete || isRunning" @click="run">&#9654; Run your file</button>
+      <button class="btn is-green" :disabled="!evaluation.isComplete || isRunning" @click="run">&#9654; {{ isRunning ? 'Running...' : 'Run & check my work' }}</button>
       <button class="btn is-ghost" @click="restart">{{ confirmingRestart ? 'Click again to wipe' : 'Start over' }}</button>
     </header>
 
@@ -178,7 +214,7 @@ onBeforeUnmount(() => {
 
         <div v-if="evaluation.isComplete" class="finished">
           <strong>Done: every line typed correctly.</strong>
-          <span>Press Run your file to see it work, then try the visualizer above with the same idea.</span>
+          <span>Press Run &amp; check my work: the visualizer above will play what your code does.</span>
         </div>
         <template v-else>
           <div v-if="justUnlockedChunk !== null" class="unlocked-banner">NEXT PART UNLOCKED</div>
@@ -198,7 +234,8 @@ onBeforeUnmount(() => {
 
         <div v-if="runError" class="run-box error">[{{ runError.code }}] {{ runError.message }}</div>
         <div v-else-if="runOutcome" class="run-box">
-          <div class="run-title">OUTPUT {{ runOutcome.stdout === course.expectedOutput ? '(matches the expected result)' : '(differs from the expected result)' }}</div>
+          <div class="verdict" :class="runOutcome.stdout === course.expectedOutput && runOutcome.exitCode === 0 ? 'pass' : 'fail'">{{ runOutcome.stdout === course.expectedOutput && runOutcome.exitCode === 0 ? '✓ Your output is correct' : '✗ Your output differs from the expected result' }}</div>
+          <div class="run-title">OUTPUT</div>
           <pre>{{ runOutcome.stdout }}<span class="err">{{ runOutcome.stderr }}</span></pre>
         </div>
         <div v-if="saveError" class="run-box error">Could not save: {{ saveError.message }}</div>
@@ -257,6 +294,9 @@ onBeforeUnmount(() => {
 .finished span { color: var(--text); font-size: 12px; }
 .run-box { margin-top: 10px; padding: 8px 10px; border: 1px solid rgba(25, 230, 255, 0.3); user-select: text; -webkit-user-select: text; }
 .run-box.error { border-color: var(--neon-red); color: var(--neon-red); font-size: 12px; }
+.verdict { font-weight: 900; letter-spacing: 0.08em; }
+.verdict.pass { color: var(--neon-green); text-shadow: var(--glow-green); }
+.verdict.fail { color: var(--neon-red); }
 .run-title { font-size: 10px; letter-spacing: 0.2em; color: var(--neon-cyan); }
 .run-box pre { margin: 4px 0 0; white-space: pre-wrap; }
 .err { color: var(--neon-red); }

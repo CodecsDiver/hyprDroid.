@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
 import { binarySearchFrames } from '../algorithms/binarySearch'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
@@ -8,6 +9,15 @@ const sortedValues = Array.from({ length: 31 }, (_, index) => 2 + index * 3)
 const target = ref(sortedValues[22])
 
 const player = useStepPlayer(() => binarySearchFrames(sortedValues, target.value))
+
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  watch(replayRequest, async () => {
+    await nextTick()
+    player.restart()
+    player.play()
+  })
+}
 
 function pickRandomTarget(): void {
   const presentValue = sortedValues[Math.floor(Math.random() * sortedValues.length)]

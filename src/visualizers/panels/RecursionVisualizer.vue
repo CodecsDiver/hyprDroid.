@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
 import { fibonacciFrames, type CallNode } from '../algorithms/recursion'
 import PlayerControls from '../PlayerControls.vue'
 import { useStepPlayer } from '../useStepPlayer'
@@ -7,6 +8,15 @@ import { useStepPlayer } from '../useStepPlayer'
 const n = ref(5)
 const frames = computed(() => fibonacciFrames(n.value))
 const player = useStepPlayer(() => frames.value)
+
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  watch(replayRequest, async () => {
+    await nextTick()
+    player.restart()
+    player.play()
+  })
+}
 
 const NODE_SPACING_X = 56
 const NODE_SPACING_Y = 62

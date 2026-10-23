@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { inject, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
 
 interface ListNode {
   id: number
@@ -60,6 +61,31 @@ function find(): void {
     walkTimer = setTimeout(walk, 450)
   }
   walk()
+}
+
+const sleep = (milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
+let demoToken = 0
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  // Builds 1 -> 2 -> 3, reverses it, then searches it.
+  watch(replayRequest, async () => {
+    const token = ++demoToken
+    clearTimeout(walkTimer)
+    highlightedId.value = null
+    nodes.value = []
+    const script: Array<() => void> = [
+      () => { inputValue.value = 3; prepend() },
+      () => { inputValue.value = 2; prepend() },
+      () => { inputValue.value = 1; prepend() },
+      () => reverse(),
+      () => { inputValue.value = 1; find() },
+    ]
+    for (const step of script) {
+      await sleep(700)
+      if (token !== demoToken) return
+      step()
+    }
+  })
 }
 </script>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { inject, ref, watch } from 'vue'
+import { LAB_REPLAY_KEY } from '../../lab/replay'
 
 const stack = ref<number[]>([3, 7])
 const queue = ref<number[]>([3, 7])
@@ -40,6 +41,23 @@ function dequeue(): void {
   const value = queue.value[0]
   queue.value = queue.value.slice(1)
   countOperation(`queue.popleft()  ->  ${value}   # first in, first out`)
+}
+
+const sleep = (milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
+let demoToken = 0
+const replayRequest = inject(LAB_REPLAY_KEY, null)
+if (replayRequest) {
+  // Plays a short scripted session so the finished lab shows both structures at work.
+  watch(replayRequest, async () => {
+    const token = ++demoToken
+    stack.value = []
+    queue.value = []
+    for (const step of [push, push, push, pop, enqueue, enqueue, enqueue, dequeue, pop, dequeue]) {
+      await sleep(450)
+      if (token !== demoToken) return
+      step()
+    }
+  })
 }
 </script>
 
