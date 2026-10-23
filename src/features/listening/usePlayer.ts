@@ -1,6 +1,6 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { sendListeningCommand, type ListeningState, type Track } from '@/data/repos/music'
-import { signedUrl } from '@/data/storage'
+import { fileUrl } from '@/data/files'
 import { expectedPositionMs, isSyncActive, planCorrection } from '@/domain/listeningSync'
 import { serverNow } from '@/state/live'
 import { prefs } from '@/state/prefs'
@@ -15,7 +15,7 @@ export interface PlayerOptions {
 /**
  * Audio playback for Listening Together.
  *
- * Local mode: independent playback of the household's tracks.
+ * Local mode: independent playback of the shared tracks.
  * Synced mode (only while BOTH people have opted in): the database's
  * listening session is the source of truth. Controls send commands; every
  * device follows the session using the server clock, easing small drift with
@@ -56,10 +56,10 @@ export function usePlayer({ tracks, listening, myUserId }: PlayerOptions) {
     if (!track) return
     loading.value = true
     try {
-      audio.src = await signedUrl('music', track.audioPath)
+      audio.src = fileUrl(track.audioFileId)
       currentId.value = trackId
       audio.currentTime = startAtMs / 1000
-      coverUrl.value = track.coverPath ? await signedUrl('covers', track.coverPath).catch(() => null) : null
+      coverUrl.value = track.coverFileId ? fileUrl(track.coverFileId) : null
       updateMediaSession(track)
     } finally {
       loading.value = false

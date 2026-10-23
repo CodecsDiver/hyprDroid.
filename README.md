@@ -1,51 +1,60 @@
 # Signal Home
 
 A private, cozy shared home for two people — **Daniel and Vee**. It rebuilds two earlier prototypes
-(*Signal Home* and *Our Little Love Universe*) into one cohesive, real-time, installable web app.
+(*Signal Home* and *Our Little Love Universe*) into one cohesive, live, installable web app.
 
 The landing screen opens straight into an interactive isometric house. Tap the rose to send a love ping,
 the guitar to listen together, the window to tend the mood garden, the heart for the Love Universe — and so on.
 
 | | |
 |---|---|
-| Stack | Vue 3 (Composition API) · TypeScript strict · Vite · Three.js · Supabase · CSS design tokens · PWA |
-| Runtime dependencies | `vue`, `three`, `@supabase/supabase-js` (nothing else) |
-| Backend | Supabase Auth, Postgres + Row Level Security, Storage (private buckets), Realtime |
+| Stack | Vue 3 (Composition API) · TypeScript strict · Vite · Three.js · CSS design tokens · PWA |
+| Runtime dependencies | `vue`, `three` in the browser · `@netlify/blobs` on Netlify only |
+| Backend | **Built in.** One small API (`server/`) that runs as a Netlify Function, inside `npm run dev`, or as a plain Node server. No database, no third-party service, no account anywhere. |
 
-> **Status — read before calling it done.** Everything below the 3D layer is real and tested. The 3D room itself
-> is **placeholder geometry**: the final Blender environment, final sound effects and mood-loop audio have not been
-> provided, and the app says so on screen. See [docs/REPORT.md](docs/REPORT.md) for exactly what is verified and
-> what is not, and [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for the open items.
+> **Status — read before calling it done.** Everything below the 3D layer is real and tested, including two real browsers
+> talking through the real server. The 3D room itself is **placeholder geometry**: the final Blender environment, sound
+> effects and mood-loop audio have not been provided, and the app says so on screen. The Netlify deployment path has **not**
+> been run on Netlify itself. See [docs/REPORT.md](docs/REPORT.md) for exactly what is verified and what is not, and
+> [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for the open items.
 
 ## Quick start
 
 ```bash
 npm install
-cp .env.example .env.local        # fill in your Supabase URL + ANON key (never the service-role key)
-npm run dev
+npm run dev          # http://localhost:5173 — sign in as  daniel / dev   or   vee / dev
 ```
 
-Without `.env.local` the app opens a "needs a backend" screen. A **backend-free 3D preview** is available in
-development at `http://localhost:5173/#/scene-preview` (placeholder room, demo data, no accounts).
+That is all. `npm run dev` runs the API in the same process and keeps its data in `./.data`. Open it in two browser
+windows (one per person) to see everything work live. A backend-free 3D preview is at `http://localhost:5173/#/scene-preview`.
 
-Full backend setup (Auth, migrations, storage, realtime, deployment): **[docs/SETUP.md](docs/SETUP.md)**.
+## Put it online (Netlify)
+
+1. `npm run setup:auth` — asks for the two names and passwords, prints three values.
+2. Netlify → your site → *Site configuration → Environment variables*: add `SIGNAL_USERS`, `SIGNAL_SESSION_SECRET`, `SIGNAL_ADMIN_TOKEN`.
+3. Deploy (connect the repo; `netlify.toml` already says how to build).
+
+Or run it on any machine with Node: `npm run build && npm run build:standalone && npm start`.
+Step by step, including loading your private originals: **[docs/SETUP.md](docs/SETUP.md)**.
 
 ## Scripts
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Vite dev server |
-| `npm run typecheck` | `vue-tsc` in strict mode for the app and for tests |
-| `npm test` | 205 tests: 92 database tests on real Postgres (PGlite) — 83 security + 9 client↔schema contract — and 113 unit tests |
+| `npm run dev` | Vite dev server **with the API built in** (dev users `daniel` / `vee`, password `dev`) |
+| `npm run typecheck` | `vue-tsc` in strict mode for the app, the tests and the server |
+| `npm test` | 161 tests: 49 API security/behaviour tests against the real handler, 4 client↔server contract tests, 108 unit tests |
 | `npm run build` | Typecheck + production build |
 | `npm run verify` | Typecheck + tests + build + **dist safety check** (no private files, no secrets) |
-| `npm run serve:dist` | Serve `dist/` with the real security headers (CSP) applied |
+| `npm run setup:auth` | Create the two accounts and secrets for a real deployment |
+| `npm run build:standalone` / `npm start` | Build and run the self-contained Node server (serves the app and the API) |
+| `npm run test:e2e` | Two-browser end-to-end test against the real server (needs Playwright; see the file header) |
 | `npm run assets:extract` | Pull the private originals/art/song/notes out of your two HTML files into `./private` |
-| `npm run assets:upload` | Load that private content into your Supabase project (service-role key, run locally) |
+| `npm run assets:upload` | Load that private content into your running app through its own API |
 
 ## The features
 
-- **Love Ping** — private real-time hearts, kisses, hugs, comfort, goodnight, and your own custom reactions. The shared rose grows with them.
+- **Love Ping** — private live hearts, kisses, hugs, comfort, goodnight, and your own custom reactions. The shared rose grows with them.
 - **Listening Together** — your own songs, playlists, cover art; synchronised playback only while *both* of you opt in.
 - **Mood Garden** — both moods shape the room's weather; each day's first mood plants a seed; watering grows it; it persists.
 - **Date Jar** — add, draw at random, favourite, complete with a note and rating.
@@ -60,14 +69,16 @@ Full backend setup (Auth, migrations, storage, realtime, deployment): **[docs/SE
 
 ```
 src/domain/      pure logic (moods→environment, garden, events, sync maths…) — no Vue, no network
-src/data/        Supabase access, outbox (durable queue), inbox (exactly-once), realtime hub
+src/data/        API client, long-poll sync hub, outbox (durable queue), inbox (exactly-once), repositories
 src/scene/       Three.js: picking, camera rig, weather, lighting, GLB loader, placeholders
 src/registry/    interactionRegistry.ts — Blender object id → behaviour (declarative)
 src/assets/      manifest.ts — every replaceable asset (GLB, clips, sfx, music, textures, images)
 src/features/    one folder per feature panel (code-split)
-supabase/        migrations (schema + RLS + RPCs + storage + realtime) and the test shim
-scripts/         private-content extract/upload, dist verification, header-aware preview server
-tests/           db (RLS on real Postgres) · unit · e2e (browser smoke test, optional)
+src/shared/      wire types shared by browser and server
+server/          the backend: router, auth, store, routes — pure Request → Response
+netlify/         the Netlify Function entry points
+scripts/         setup:auth, private-content extract/upload, dist verification, standalone build
+tests/           api (security + contract on the real handler) · unit · e2e (two real browsers, optional)
 docs/            setup, architecture, asset spec, security, limitations, report
 ```
 
@@ -75,6 +86,6 @@ docs/            setup, architecture, asset spec, security, limitations, report
 
 Your two original HTML files, the sticker artwork, the room song and the written notes are personal. They are **never
 committed**: `./private/` is gitignored, a test fails if anything under it is tracked, and `npm run verify` fails the
-build if any private file (even renamed) would be published. They live only in *private* Supabase buckets and tables,
-readable by the two of you. If you would rather the nicknames in the mood labels (`src/domain/moods.ts`) were not in
-a public repo either, make the repository private.
+build if any private file (even renamed) would be published. They live only in your app's private storage, readable
+by the two of you after signing in. If you would rather the nicknames in the mood labels (`src/domain/moods.ts`) were
+not in a public repo either, make the repository private.

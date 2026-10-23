@@ -5,7 +5,7 @@
  *
  *  1. No file in dist is byte-identical to anything in ./private (originals, sticker art, song).
  *  2. No audio files and no unexpected HTML pages are published.
- *  3. No service-role / secret keys or private-asset markers appear in any shipped file.
+ *  3. No password hashes, server secrets or admin tokens appear in any shipped file.
  *  4. The service worker, security headers and capsule viewer are present.
  */
 import { createHash } from 'node:crypto'
@@ -49,14 +49,9 @@ for (const file of files) {
 const textLike = new Set(['.js', '.css', '.html', '.json', '.svg', '.webmanifest', '.map', '.txt'])
 for (const file of files.filter((f) => textLike.has(extname(f).toLowerCase()) || f.endsWith('_headers'))) {
   const text = readFileSync(file, 'utf8')
-  if (/service_role/.test(text) && !/never|must not|bypass|forbid/i.test(text)) problems.push(`${relative(dist, file)} mentions service_role outside a warning`)
-  if (/sb_secret_[A-Za-z0-9_-]{10,}/.test(text)) problems.push(`${relative(dist, file)} contains a Supabase secret key`)
-  for (const jwt of text.match(/eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}/g) ?? []) {
-    try {
-      const role = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString()).role
-      if (role === 'service_role') problems.push(`${relative(dist, file)} contains a service-role JWT`)
-    } catch { /* not a JWT */ }
-  }
+  if (/pbkdf2\$sha256\$/.test(text)) problems.push(`${relative(dist, file)} contains a password hash`)
+  if (/SIGNAL_(SESSION_SECRET|ADMIN_TOKEN)\s*[=:]\s*["']?[0-9a-f]{32,}/i.test(text)) problems.push(`${relative(dist, file)} contains a server secret`)
+  if (/dev-admin-token/.test(text)) problems.push(`${relative(dist, file)} contains the development admin token`)
   if (/data:audio\/|data:video\//.test(text)) problems.push(`${relative(dist, file)} embeds audio/video as a data: URI`)
 }
 
@@ -68,6 +63,7 @@ const headers = existsSync(join(dist, '_headers')) ? readFileSync(join(dist, '_h
 const mainCsp = /^\/\*\n\s+Content-Security-Policy: (.*)$/m.exec(headers)?.[1] ?? ''
 if (!mainCsp) problems.push('no Content-Security-Policy for /*')
 if (/script-src[^;]*'unsafe-(inline|eval)'/.test(mainCsp)) problems.push("main CSP allows unsafe script execution")
+if (/https?:|wss?:/.test(/connect-src ([^;]*)/.exec(mainCsp)?.[1] ?? '')) problems.push('main CSP lets the app connect to a third-party origin')
 
 if (problems.length > 0) {
   console.error('dist verification FAILED:')

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PanelShell from '@/components/PanelShell.vue'
 import ResourceView from '@/components/ResourceView.vue'
 import { addTrack, createPlaylist, deletePlaylist, deleteTrack, fetchListeningState, fetchPlaylists, fetchTracks, setListeningConsent, setPlaylistTracks, type ListeningState, type Playlist, type Track } from '@/data/repos/music'
 import { downscaleImage } from '@/data/imageTools'
-import { signedUrl } from '@/data/storage'
+import { fileUrl } from '@/data/files'
 import { formatDuration } from '@/domain/time'
-import { home, partnerName } from '@/state/household'
+import { partnerName } from '@/state/household'
 import { session } from '@/state/session'
 import { useAction, useResource } from '@/state/useAsync'
 import type { PanelDefinition } from '../panels'
@@ -19,20 +19,12 @@ defineEmits<{ close: [] }>()
 const me = session.userId ?? ''
 const tracks = useResource(fetchTracks, [] as Track[], ['tracks'])
 const playlists = useResource(fetchPlaylists, [] as Playlist[], ['playlists'])
-const listening = useResource(() => fetchListeningState(me), { consent: { me: false, partner: false }, session: null } as ListeningState, ['listening_sessions', 'listening_consent'])
+const listening = useResource(() => fetchListeningState(), { consent: { me: false, partner: false }, session: null } as ListeningState, ['listening_sessions', 'listening_consent'])
 const player = usePlayer({ tracks: tracks.data, listening: listening.data, myUserId: me })
 
 const view = ref<'library' | 'playlists' | 'add'>('library')
 const openPlaylistId = ref<string | null>(null)
-const coverUrls = ref<Record<string, string>>({})
-
-watch(() => tracks.data.value, async (list) => {
-  for (const track of list) {
-    if (track.coverPath && !coverUrls.value[track.id]) {
-      try { coverUrls.value = { ...coverUrls.value, [track.id]: await signedUrl('covers', track.coverPath) } } catch { /* cover is decorative */ }
-    }
-  }
-}, { immediate: true })
+const coverUrls = computed(() => Object.fromEntries(tracks.data.value.filter((t) => t.coverFileId).map((t) => [t.id, fileUrl(t.coverFileId!)])))
 
 const openPlaylist = computed(() => playlists.data.value.find((p) => p.id === openPlaylistId.value) ?? null)
 const playlistTracks = computed(() => (openPlaylist.value ? openPlaylist.value.trackIds.map((id) => tracks.data.value.find((t) => t.id === id)).filter((t): t is Track => !!t) : []))
@@ -70,10 +62,10 @@ function probeDuration(file: File): Promise<number | null> {
 }
 
 const upload = useAction(async () => {
-  if (!home.household || !audioFile.value) throw Object.assign(new Error('Choose an audio file first.'), { name: 'ValidationError' })
+  if (!audioFile.value) throw Object.assign(new Error('Choose an audio file first.'), { name: 'ValidationError' })
   const cover = coverFile.value ? await downscaleImage(coverFile.value, 800) : null
   const durationMs = await probeDuration(audioFile.value)
-  await addTrack(home.household.id, me, {
+  await addTrack({
     title: trackForm.value.title, artist: trackForm.value.artist, audio: audioFile.value,
     cover: cover ? new File([cover], 'cover', { type: cover.type }) : null, durationMs,
   })
@@ -93,17 +85,16 @@ const removeTrack = useAction(async (track: Track) => {
 const plName = ref('')
 const plCover = ref<File | null>(null)
 const createList = useAction(async () => {
-  if (!home.household) return
   const cover = plCover.value ? await downscaleImage(plCover.value, 800) : null
-  await createPlaylist(home.household.id, plName.value, cover ? new File([cover], 'cover', { type: cover.type }) : null, me)
+  await createPlaylist(plName.value, cover ? new File([cover], 'cover', { type: cover.type }) : null)
   plName.value = ''
   plCover.value = null
   await playlists.reload()
 }, { success: 'Playlist created.' })
 
 const saveOrder = useAction(async (ids: string[]) => {
-  if (!home.household || !openPlaylist.value) return
-  await setPlaylistTracks(home.household.id, openPlaylist.value.id, ids)
+  if (!openPlaylist.value) return
+  await setPlaylistTracks(openPlaylist.value.id, ids)
   await playlists.reload()
 })
 function move(index: number, delta: number): void {
@@ -223,7 +214,7 @@ const playList = (list: Playlist): void => {
       </section>
 
       <form v-else class="stack" @submit.prevent="upload.run()">
-        <p class="hint">Songs are stored privately in your household and streamed only to the two of you. Add music you own or have the right to use.</p>
+        <p class="hint">Songs are stored privately on your server and streamed only to the two of you. Add music you own or have the right to use.</p>
         <div class="field"><label for="audio-file">Audio file</label><input id="audio-file" type="file" accept="audio/*" required @change="onAudio" /></div>
         <div class="field"><label for="track-title">Title</label><input id="track-title" v-model="trackForm.title" class="input" maxlength="120" required /></div>
         <div class="field"><label for="track-artist">Artist (optional)</label><input id="track-artist" v-model="trackForm.artist" class="input" maxlength="120" /></div>

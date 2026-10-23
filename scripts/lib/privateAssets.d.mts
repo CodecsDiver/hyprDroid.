@@ -8,12 +8,12 @@ export const CAPSULE_ITEMS: Record<string, { slug: string; title: string; descri
 export interface ManifestEntry { sha256: string; bytes: number }
 export interface PlanStep {
   type: 'capsule' | 'sticker-sheet' | 'track'
-  bucket: string
-  path: string
+  /** The server's file kind (which limits and visibility rules apply). */
+  fileKind: 'capsule' | 'sticker' | 'music'
   source: string
   contentType: string
   sha256: string
   bytes: number
   item?: { slug: string; title: string; description: string }
 }
-export function buildUploadPlan(input: { household: string; author: string; manifest: { files: Record<string, ManifestEntry> } }): PlanStep[]
+export function buildUploadPlan(input: { manifest: { files: Record<string, ManifestEntry> } }): PlanStep[]

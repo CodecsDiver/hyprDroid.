@@ -2,13 +2,12 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { AmbientPlayer, playSfx, unlockAudio } from '@/audio/engine'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
-import InvitePartner from '@/components/InvitePartner.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import NoteReveal from '@/components/NoteReveal.vue'
 import ObjectNavigator from '@/components/ObjectNavigator.vue'
 import StatusBar from '@/components/StatusBar.vue'
 import { DEFAULT_MANIFEST, createAssetResolver, validateManifest } from '@/assets/manifest'
-import { signedUrl } from '@/data/storage'
+import { fileUrl } from '@/data/files'
 import { unreadForObject } from '@/domain/notes'
 import { MOODS } from '@/domain/moods'
 import { roseStage } from '@/domain/rose'
@@ -17,7 +16,7 @@ import { playEffect } from '@/effects/bus'
 import { PANELS } from '@/features/panels'
 import { INTERACTIONS, INTERACTION_IDS, getInteraction } from '@/registry/interactionRegistry'
 import type { SceneController } from '@/scene/SceneController'
-import { home, myName, partnerName, refreshBondXp } from '@/state/household'
+import { home, partnerName, refreshBondXp } from '@/state/household'
 import { broadcastHeart, dismissOutboxFailure, live, onPartnerHeart, onTableChange, startLive, stopLive } from '@/state/live'
 import { environment, moods, refreshMoods, useEnvironmentClock } from '@/state/moods'
 import { gardenPlacements, refreshPlants } from '@/state/gardenState'
@@ -66,7 +65,7 @@ async function mountScene(): Promise<void> {
     const created = await SceneController.create({
       host: host.value,
       manifest: DEFAULT_MANIFEST,
-      resolver: createAssetResolver(signedUrl),
+      resolver: createAssetResolver(fileUrl),
       quality: resolveQuality(),
       isReducedMotion,
       onSelect: (id) => activate(id),
@@ -207,8 +206,8 @@ function onSceneKey(event: KeyboardEvent): void {
 // ------------------------------------------------------------ data + realtime
 const offTables: (() => void)[] = []
 async function boot(): Promise<void> {
-  if (!session.userId || !home.household) return
-  await startLive({ userId: session.userId, householdId: home.household.id }, (error) => console.warn('[inbox]', error))
+  if (!session.userId) return
+  await startLive({ userId: session.userId }, (error) => console.warn('[inbox]', error))
   stopHandlers = registerEventHandlers()
   offTables.push(
     onTableChange('moods', () => void refreshMoods().catch(() => {})),
@@ -288,14 +287,6 @@ function pingHeart(): void {
         <button type="button" class="btn btn--small btn--quiet" aria-label="Settings" @click="openPanel('settings')"><span aria-hidden="true">⚙️</span></button>
       </div>
     </header>
-
-    <div v-if="!home.partner" class="banner card" role="region" aria-label="Invite your partner">
-      <p><strong>{{ myName }}, your partner hasn't joined yet.</strong> Pings and notes are delivered once they do.</p>
-      <details>
-        <summary>Create an invite</summary>
-        <InvitePartner />
-      </details>
-    </div>
 
     <p v-if="hoverLabel" class="hover-label" aria-hidden="true">{{ hoverLabel }}</p>
     <p v-if="calloutText && !ui.panel" class="callout" role="status">{{ calloutText }}</p>

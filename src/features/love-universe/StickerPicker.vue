@@ -2,7 +2,6 @@
 import { onMounted, ref, watch } from 'vue'
 import { downscaleImage } from '@/data/imageTools'
 import { addSticker, deleteSticker, type Sticker } from '@/data/repos/loveUniverse'
-import { home } from '@/state/household'
 import { session } from '@/state/session'
 import { refreshStickers, stickers, stickerVisual, type StickerVisual } from '@/state/stickers'
 import { useAction } from '@/state/useAsync'
@@ -18,7 +17,7 @@ async function resolveAll(): Promise<void> {
   for (const sticker of stickers.value) {
     if (visuals.value[sticker.id]) continue
     try {
-      visuals.value = { ...visuals.value, [sticker.id]: await stickerVisual(sticker) }
+      visuals.value = { ...visuals.value, [sticker.id]: stickerVisual(sticker) }
     } catch {
       /* unavailable sticker: skip */
     }
@@ -31,9 +30,9 @@ onMounted(async () => {
 watch(stickers, () => void resolveAll())
 
 const upload = useAction(async () => {
-  if (!home.household || !session.userId || !image.value) throw Object.assign(new Error('Choose an image first.'), { name: 'ValidationError' })
+  if (!image.value) throw Object.assign(new Error('Choose an image first.'), { name: 'ValidationError' })
   const small = await downscaleImage(image.value, 512, 0.9)
-  await addSticker(home.household.id, session.userId, label.value, small)
+  await addSticker(label.value, small)
   label.value = ''
   image.value = null
   adding.value = false

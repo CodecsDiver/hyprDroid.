@@ -1,98 +1,72 @@
 # Setup
 
-You need: Node 20+, a Supabase project (free tier is fine), and a host that can set HTTP headers (Netlify, Cloudflare Pages, nginx…).
+You need Node 20+. Nothing else: no database, no third-party account. Pick how you want to run it.
 
-## 1. Create the Supabase project
-
-1. Create a project at supabase.com. Note the **Project URL** and the **anon (public) key** (Settings → API).
-2. **Keep the service-role key out of the app.** It is only ever used by `npm run assets:upload` in your own terminal.
-
-## 2. Lock down sign-up and create the two accounts
-
-Signal Home is a two-person app; nobody else should be able to register.
-
-1. Authentication → Sign In / Providers → **disable “Allow new users to sign up”**.
-2. Authentication → Providers → Email: keep **Confirm email** on.
-3. Authentication → Users → **Add user** twice (Daniel and Vee): their real emails, a strong password each,
-   “Auto Confirm User” ticked.
-4. Authentication → URL Configuration: set **Site URL** to where you will host the app (needed for email sign-in links).
-
-## 3. Apply the database
-
-Run the five files in `supabase/migrations/` **in order** — either paste each into the SQL editor, or with the CLI:
+## A. Try it on your computer
 
 ```bash
-supabase link --project-ref <ref>
-supabase db push
-```
-
-This creates every table with Row Level Security, the RPC functions, the five **private** storage buckets with size/type
-limits and their policies, and adds the tables to the `supabase_realtime` publication.
-
-Optional but recommended: Database → Extensions → enable **pg_cron** *before* running `…0002_events.sql`, and the hourly
-expired-event purge is scheduled automatically. Otherwise call `select public.purge_expired_events();` yourself now and then
-(expired events are already invisible to everyone; the purge only reclaims space).
-
-## 4. Realtime authorisation (for live presence and the “tap the heart together” pulse)
-
-Database changes (pings, notes, moods…) work out of the box. The *ephemeral* signals use private Realtime channels, which
-need **Realtime → Settings → turn off “Allow public access”** so the policies on `realtime.messages` (migration 5) apply.
-If you skip this, everything still works except the “partner is here” chip and the live heart pulse.
-
-## 5. Configure and run the app
-
-```bash
-cp .env.example .env.local
-# VITE_SUPABASE_URL=https://<ref>.supabase.co
-# VITE_SUPABASE_ANON_KEY=<anon key>
 npm install
 npm run dev
 ```
 
-The app refuses to start if the key you provide is a service-role/secret key.
+Open http://localhost:5173 in two windows. Sign in as `daniel` / `dev` in one and `vee` / `dev` in the other.
+Data lives in `./.data` (delete the folder to start over). The dev users only exist outside production.
 
-## 6. First run
+## B. Deploy on Netlify
 
-1. Daniel signs in → **Create our home** → creates the household and an **invite code** for Vee's email.
-2. Send Vee the code privately. It works once, only for Vee's verified email address, and expires in 7 days.
-3. Vee signs in → **I have an invite code** → joins. The household is now exactly two people (enforced by the database).
+1. **Make the accounts.** On your computer run `npm run setup:auth`. It asks for each person's name and a password
+   (12+ characters), then prints three values. Passwords are stored only as salted PBKDF2 hashes.
+2. **Create the site.** Netlify → *Add new site → Import an existing project* → pick this repository. `netlify.toml`
+   already sets the build command (`npm run build`), the publish folder (`dist`) and the functions folder.
+3. **Add the three values.** *Site configuration → Environment variables*:
+   - `SIGNAL_USERS` — the JSON line (paste it exactly, no extra quotes)
+   - `SIGNAL_SESSION_SECRET` — signs the login cookie
+   - `SIGNAL_ADMIN_TOKEN` — only for loading your originals (step 5); delete it afterwards if you like
+4. **Deploy.** Open the site. If it says "not set up yet", a variable is missing or malformed; the screen lists what.
+5. **(Optional) Load your private originals** — see below.
 
-## 7. Time Capsule and your private content
+Data is kept in Netlify Blobs (built into your site, nothing to create). The API is one Netlify Function at `/api/*`.
 
-Your two original HTML files, the sticker sheet, the room song and the written notes must stay private.
-
-```bash
-# 1. Extract (writes ./private — gitignored)
-npm run assets:extract -- path/to/signal-home.html path/to/love-universe.html
-
-# 2. Preview what will be uploaded (no network)
-npm run assets:upload -- --household <household-uuid> --author-email daniel@example.com --dry-run
-
-# 3. Upload (runs on YOUR machine; the key never goes in the web app or a VITE_ variable)
-SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<service key> \
-  npm run assets:upload -- --household <household-uuid> --author-email daniel@example.com --yes
-```
-
-`--author-email` is the person who wrote the notes and owns the song/stickers (Daniel). The household id is shown in
-Table editor → `households`. The script is safe to re-run; it refuses to overwrite a Time Capsule item whose fingerprint differs.
-
-What this creates: both originals in the private `time-capsule` bucket (read-only for the two of you, fingerprint recorded in
-`time_capsule_items`), 18 stickers from the sticker sheet, the room song as a track, and the notes in `love_notes`.
-
-## 8. Deploy
+## C. Run it on your own machine or server
 
 ```bash
-npm run verify        # typecheck + tests + build + dist safety check
+npm install
+npm run build && npm run build:standalone
+SIGNAL_USERS='…' SIGNAL_SESSION_SECRET=… SIGNAL_ADMIN_TOKEN=… PORT=8080 DATA_DIR=/var/lib/signal-home npm start
 ```
 
-Deploy `dist/` over **HTTPS** (required for the service worker, microphone and notifications) and make sure the headers in
-`dist/_headers` are applied (Netlify and Cloudflare Pages read that file automatically; for nginx/Caddy copy the values).
-They include the Content-Security-Policy — tighten `https://*.supabase.co` to your exact project origin.
-Test locally with the real headers: `npm run build && npm run serve:dist`.
+One Node process serves the app and the API and stores everything in `DATA_DIR`. Put HTTPS in front of it
+(Caddy, nginx, a tunnel) — the session cookie is only marked `Secure` over HTTPS. Without the `SIGNAL_*` variables
+and with `NODE_ENV` unset it falls back to the dev users, so always set them on a real server.
+Run **one** process per data folder (the folder store is not safe across several processes).
 
-## Troubleshooting
+## Loading your private originals
 
-- **“needs a backend” screen** — `.env.local` missing or wrong; restart `npm run dev` after editing it.
-- **Invite says “not valid for this account”** — the signed-in email must equal the invited email; the code is single-use.
-- **No sound from mood loops / effects** — the loops are not provided (see ASSET_SPEC); effects use synthesised sounds until you add samples.
-- **Large song upload fails** — the bucket allows 50 MB, but your Supabase plan may set a lower global upload limit.
+Your two original HTML files, sticker sheet, song and written notes must never be committed to this public repository.
+
+```bash
+# 1. Pull them out of the two files you uploaded (writes ./private, which git ignores)
+npm run assets:extract -- path/to/index1.html path/to/index2.html
+
+# 2. Check the plan
+SIGNAL_ADMIN_TOKEN=… node scripts/upload-private-assets.mjs --url https://YOUR-SITE.netlify.app --author daniel --dry-run
+
+# 3. Load them
+SIGNAL_ADMIN_TOKEN=… node scripts/upload-private-assets.mjs --url https://YOUR-SITE.netlify.app --author daniel
+```
+
+It uploads both originals to the Time Capsule (immutable, SHA-256 recorded), 18 stickers from the sheet, the room song
+as a track, and the written notes as love notes authored by `--author`. Safe to re-run; existing items are skipped.
+For `npm run dev` use `--url http://localhost:5173`; the dev admin token is `dev-admin-token-` followed by the contents
+of `.data/dev-secret`, cut to 64 characters.
+
+## Changing a password or the names
+
+Run `npm run setup:auth` again and replace `SIGNAL_USERS` (and `SIGNAL_SESSION_SECRET` to sign everyone out).
+Keep the same lower-case ids (`daniel`, `vee`): data is stored under them.
+
+## Checks before you rely on it
+
+`npm run verify` (types, tests, build, dist safety). Then, on the deployed site, with two real devices: sign in on both, send
+a ping each way, put one phone in airplane mode and send to it, then turn it back on. See LIMITATIONS.md for what has not been
+exercised on a real Netlify deployment.

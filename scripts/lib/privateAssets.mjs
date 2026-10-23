@@ -72,20 +72,16 @@ export const CAPSULE_ITEMS = {
 }
 
 /** Builds the deterministic upload plan; the upload script executes it (or prints it for --dry-run). */
-export function buildUploadPlan({ household, author, manifest }) {
+export function buildUploadPlan({ manifest }) {
   const plan = []
   for (const kind of ['signal-home', 'love-universe']) {
     const entry = manifest.files[`time-capsule/${kind}.html`]
     if (!entry) continue
-    plan.push({ type: 'capsule', bucket: 'time-capsule', path: `${household}/${kind}.html`, source: `time-capsule/${kind}.html`, contentType: 'text/html', sha256: entry.sha256, bytes: entry.bytes, item: CAPSULE_ITEMS[kind] })
+    plan.push({ type: 'capsule', fileKind: 'capsule', source: `time-capsule/${kind}.html`, contentType: 'text/html', sha256: entry.sha256, bytes: entry.bytes, item: CAPSULE_ITEMS[kind] })
   }
   const sheet = manifest.files['assets/sticker-sheet.jpg']
-  if (sheet) {
-    plan.push({ type: 'sticker-sheet', bucket: 'stickers', path: `${household}/${author}/sticker-sheet.jpg`, source: 'assets/sticker-sheet.jpg', contentType: 'image/jpeg', sha256: sheet.sha256, bytes: sheet.bytes })
-  }
+  if (sheet) plan.push({ type: 'sticker-sheet', fileKind: 'sticker', source: 'assets/sticker-sheet.jpg', contentType: 'image/jpeg', sha256: sheet.sha256, bytes: sheet.bytes })
   const song = manifest.files['assets/room-song.mp3']
-  if (song) {
-    plan.push({ type: 'track', bucket: 'music', path: `${household}/${author}/room-song.mp3`, source: 'assets/room-song.mp3', contentType: 'audio/mpeg', sha256: song.sha256, bytes: song.bytes })
-  }
+  if (song) plan.push({ type: 'track', fileKind: 'music', source: 'assets/room-song.mp3', contentType: 'audio/mpeg', sha256: song.sha256, bytes: song.bytes })
   return plan
 }

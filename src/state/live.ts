@@ -6,9 +6,8 @@ import { ServerClock } from '@/data/clock'
 import { IdbStore } from '@/data/idb'
 import { EventInbox } from '@/data/inbox'
 import { Outbox, type OutboxFailure, type OutboxItem, type OutboxStore } from '@/data/outbox'
-import { RealtimeHub, type ConnectionStatus, type WatchedTable } from '@/data/realtime'
 import { acknowledgeEvents, fetchServerTimeMs, fetchUnseenEvents, sendQueuedEvent } from '@/data/repos/events'
-import { db } from '@/data/supabase'
+import { SyncHub, type ConnectionStatus, type WatchedTable } from '@/data/sync'
 
 /** Connection, queue and presence state for the UI. */
 export const live = reactive<{
@@ -22,13 +21,10 @@ export const live = reactive<{
 let dispatcher: EventDispatcher | null = null
 let inbox: EventInbox | null = null
 let outbox: Outbox | null = null
-let hub: RealtimeHub | null = null
+let hub: SyncHub | null = null
 let clock: ServerClock | null = null
 const tableListeners = new Map<WatchedTable, Set<() => void>>()
 const heartListeners = new Set<() => void>()
-const pendingTables = new Set<WatchedTable>()
-let tableFlush: ReturnType<typeof setTimeout> | null = null
-let clockTimer: ReturnType<typeof setInterval> | null = null
 
 class IdbOutboxStore implements OutboxStore {
   private readonly store: IdbStore<OutboxItem>
@@ -48,16 +44,14 @@ class IdbOutboxStore implements OutboxStore {
 
 export interface LiveContext {
   userId: string
-  householdId: string
 }
 
 export async function startLive(context: LiveContext, onCatchUpError?: (error: unknown) => void): Promise<void> {
   stopLive()
-  const client = db()
   dispatcher = new EventDispatcher()
   inbox = new EventInbox({
     dispatcher,
-    fetchUnseen: () => fetchUnseenEvents(context.userId),
+    fetchUnseen: fetchUnseenEvents,
     acknowledge: acknowledgeEvents,
     ...(onCatchUpError ? { onError: onCatchUpError } : {}),
   })
@@ -71,59 +65,44 @@ export async function startLive(context: LiveContext, onCatchUpError?: (error: u
       live.failures = snapshot.failures
     },
   })
-  hub = new RealtimeHub({
-    client,
+  hub = new SyncHub({
     userId: context.userId,
-    householdId: context.householdId,
     inbox,
     onStatus: (status) => {
       live.status = status
       if (status === 'live') void outbox?.flush() // connection (re)established: push anything that was queued
     },
-    onTableChange: (table) => {
-      pendingTables.add(table)
-      tableFlush ??= setTimeout(flushTables, 150) // coalesce bursts into one refresh per table
-    },
+    onTableChange: (table) => tableListeners.get(table)?.forEach((listener) => listener()),
     onPartnerPresence: (here) => {
       live.partnerHere = here
     },
-    onPartnerHeart: () => heartListeners.forEach((listener) => listener()),
+    onPartnerPulse: () => heartListeners.forEach((listener) => listener()),
+    onServerTime: (serverMs, sentMs, receivedMs) => clock?.observe({ clientSentMs: sentMs, serverMs, clientReceivedMs: receivedMs }),
   })
   await outbox.init()
   hub.start()
-  void clock.sync().catch(() => {})
-  clockTimer = setInterval(() => void clock?.sync(1).catch(() => {}), 5 * 60 * 1000)
-}
-
-function flushTables(): void {
-  tableFlush = null
-  for (const table of pendingTables) tableListeners.get(table)?.forEach((listener) => listener())
-  pendingTables.clear()
 }
 
 export function stopLive(): void {
   hub?.stop()
   outbox?.dispose()
-  if (tableFlush) clearTimeout(tableFlush)
-  if (clockTimer) clearInterval(clockTimer)
-  tableFlush = clockTimer = null
   hub = null
   outbox = null
   inbox = null
   dispatcher = null
   clock = null
-  pendingTables.clear()
   Object.assign(live, { status: 'idle', pending: 0, sending: false, failures: [], partnerHere: false })
 }
 
 /** Queues an event for the partner. Durable: survives going offline or closing the app. */
 export async function sendEvent<K extends EventKind>(kind: K, payload: EventPayloadMap[K] | Record<string, unknown>, ttlSeconds: number | null = null): Promise<void> {
-  if (!outbox) throw new Error('Not connected to a household yet')
+  if (!outbox) throw new Error('Not connected yet')
   await outbox.enqueue(kind, payload, ttlSeconds)
+  hub?.nudge()
 }
 
 export function onEvent<K extends EventKind>(kind: K, handler: EventHandler<K>): () => void {
-  if (!dispatcher) throw new Error('Not connected to a household yet')
+  if (!dispatcher) throw new Error('Not connected yet')
   return dispatcher.on(kind, handler)
 }
 
@@ -140,7 +119,7 @@ export function onPartnerHeart(listener: () => void): () => void {
 }
 
 export function broadcastHeart(): void {
-  void hub?.broadcastHeart()
+  void hub?.pulse()
 }
 
 export function retryOutbox(): void {
@@ -151,7 +130,7 @@ export function dismissOutboxFailure(id: string): void {
   outbox?.dismissFailure(id)
 }
 
-/** Best estimate of the database server's clock, in ms since epoch. */
+/** Best estimate of the server's clock, in ms since epoch. */
 export function serverNow(): number {
   return clock ? clock.serverNow() : Date.now()
 }

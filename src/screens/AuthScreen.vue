@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useManifestImage } from '@/state/assets'
-import { sendMagicLink, signInWithPassword } from '@/state/session'
+import { signInWithPassword } from '@/state/session'
 import { useAction } from '@/state/useAsync'
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
-const linkSent = ref(false)
 const logo = useManifestImage('logo')
 
 const signIn = useAction(async () => {
-  await signInWithPassword(email.value, password.value)
-})
-const link = useAction(async () => {
-  if (!email.value.trim()) throw Object.assign(new Error('Enter your email first.'), { name: 'ValidationError' })
-  await sendMagicLink(email.value)
-  linkSent.value = true
+  await signInWithPassword(username.value, password.value)
 })
 </script>
 
@@ -28,18 +22,16 @@ const link = useAction(async () => {
 
     <form class="stack auth__form" @submit.prevent="signIn.run()">
       <div class="field">
-        <label for="email">Email</label>
-        <input id="email" v-model="email" class="input" type="email" autocomplete="email" required inputmode="email" />
+        <label for="username">Name</label>
+        <input id="username" v-model="username" class="input" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
       </div>
       <div class="field">
         <label for="password">Password</label>
         <input id="password" v-model="password" class="input" type="password" autocomplete="current-password" required />
       </div>
       <button type="submit" class="btn btn--primary" :disabled="signIn.busy.value">{{ signIn.busy.value ? 'Signing in…' : 'Sign in' }}</button>
-      <button type="button" class="btn btn--quiet" :disabled="link.busy.value" @click="link.run()">Email me a sign-in link instead</button>
-      <p v-if="linkSent" class="hint" role="status">If that address belongs to an account, a sign-in link is on its way.</p>
     </form>
-    <p class="hint">Accounts are created by invitation only.</p>
+    <p class="hint">Just the two of you. There is no sign-up.</p>
   </main>
 </template>
 

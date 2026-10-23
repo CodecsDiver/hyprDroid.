@@ -8,7 +8,7 @@ function event(overrides: Partial<LoveEvent> = {}): LoveEvent {
   counter++
   const id = `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
   return {
-    id, householdId: id, senderId: id, recipientId: id, clientEventId: id, kind: 'heart_tap', payload: {},
+    id, senderId: 'daniel', recipientId: 'vee', clientEventId: id, kind: 'heart_tap', payload: {},
     createdAt: new Date(NOW - 1000).toISOString(), expiresAt: new Date(NOW + 3_600_000).toISOString(), seenAt: null, ...overrides,
   }
 }

@@ -7,7 +7,7 @@ import { downscaleImage } from '@/data/imageTools'
 import { MAX_VOICE_SECONDS, recordingSupported, VoiceRecorder } from '@/data/recorder'
 import { addMemory, deleteMemory, fetchMemories, setVisibility, type Memory, type MemoryKind } from '@/data/repos/vault'
 import { formatBytes, relativeTime } from '@/domain/time'
-import { home, myName, partnerName } from '@/state/household'
+import { myName, partnerName } from '@/state/household'
 import { session } from '@/state/session'
 import { useAction, useResource } from '@/state/useAsync'
 import type { PanelDefinition } from '../panels'
@@ -88,8 +88,7 @@ function resetForm(): void {
 }
 
 const save = useAction(async () => {
-  if (!home.household || !session.userId) return
-  await addMemory(home.household.id, session.userId, { ...form.value, file: file.value })
+  await addMemory({ ...form.value, file: file.value })
   resetForm()
   adding.value = false
   await memories.reload()
@@ -151,7 +150,7 @@ const remove = useAction(async (memory: Memory) => {
               <h4>{{ kindInfo(memory.kind).emoji }} {{ memory.title }}</h4>
               <span v-if="memory.visibility === 'private'" class="chip">🔒 private</span>
             </div>
-            <VaultMedia v-if="memory.storagePath" :memory="memory" />
+            <VaultMedia v-if="memory.fileId" :memory="memory" />
             <p v-if="memory.body" class="body">{{ memory.body }}</p>
             <p class="hint">{{ authorName(memory.authorId) }} · {{ memory.occurredOn ?? relativeTime(memory.createdAt) }}</p>
             <div v-if="memory.authorId === session.userId" class="row">

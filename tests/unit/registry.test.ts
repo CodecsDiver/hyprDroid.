@@ -49,7 +49,7 @@ describe('asset manifest', () => {
     const issues = validateManifest(with_({ models: { house: { source: { kind: 'public', path: '/assets/../secret.glb' } }, objects: {} } }), INTERACTION_IDS)
     expect(issues).toHaveLength(1)
     expect(validateManifest(with_({ models: { house: { source: { kind: 'public', path: 'https://evil.example/x.glb' } }, objects: {} } }), INTERACTION_IDS)).toHaveLength(1)
-    expect(validateManifest(with_({ models: { house: { source: { kind: 'private', bucket: 'vault', path: '/abs' } }, objects: {} } }), INTERACTION_IDS)).toHaveLength(1)
+    expect(validateManifest(with_({ models: { house: { source: { kind: 'private', fileId: 'not-a-uuid' } }, objects: {} } }), INTERACTION_IDS)).toHaveLength(1)
   })
 
   it('catches animation bindings and model overrides for unknown objects, and duplicates', () => {

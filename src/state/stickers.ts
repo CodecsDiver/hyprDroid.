@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { fetchStickers, type Sticker } from '@/data/repos/loveUniverse'
-import { signedUrl } from '@/data/storage'
+import { fileUrl } from '@/data/files'
 import { spriteStyle } from '@/domain/loveUniverse'
 
 export const stickers = ref<Sticker[]>([])
@@ -14,9 +14,9 @@ export interface StickerVisual {
   style: Record<string, string>
 }
 
-/** Resolves a sticker (whole image or one sprite-sheet cell) to a signed URL plus CSS. */
-export async function stickerVisual(sticker: Sticker): Promise<StickerVisual> {
-  const url = await signedUrl('stickers', sticker.storagePath)
+/** Resolves a sticker (whole image or one sprite-sheet cell) to a URL plus CSS. */
+export function stickerVisual(sticker: Sticker): StickerVisual {
+  const url = fileUrl(sticker.fileId)
   const style = sticker.sprite
     ? spriteStyle(sticker.sprite, url)
     : { backgroundImage: `url("${url.replace(/"/g, '%22')}")`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }

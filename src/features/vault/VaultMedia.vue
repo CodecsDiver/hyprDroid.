@@ -1,27 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { signedUrl } from '@/data/storage'
+import { computed, ref } from 'vue'
+import { fileUrl } from '@/data/files'
 import type { Memory } from '@/data/repos/vault'
 
 const props = defineProps<{ memory: Memory }>()
-const url = ref<string | null>(null)
+const url = computed(() => (props.memory.fileId ? fileUrl(props.memory.fileId) : null))
 const failed = ref(false)
-
-onMounted(async () => {
-  if (!props.memory.storagePath) return
-  try {
-    url.value = await signedUrl('vault', props.memory.storagePath)
-  } catch {
-    failed.value = true
-  }
-})
 </script>
 
 <template>
   <p v-if="failed" class="error-text" role="alert">This file could not be loaded.</p>
-  <img v-else-if="memory.kind === 'photo' && url" class="photo" :src="url" :alt="memory.title" loading="lazy" decoding="async" />
-  <audio v-else-if="memory.kind === 'voice' && url" class="audio" :src="url" controls preload="none" :aria-label="`Voice message: ${memory.title}`" />
-  <div v-else-if="memory.storagePath" class="placeholder" aria-hidden="true" />
+  <img v-else-if="memory.kind === 'photo' && url" class="photo" :src="url" :alt="memory.title" loading="lazy" decoding="async" @error="failed = true" />
+  <audio v-else-if="memory.kind === 'voice' && url" class="audio" :src="url" controls preload="none" :aria-label="`Voice message: ${memory.title}`" @error="failed = true" />
+  <div v-else-if="memory.fileId" class="placeholder" aria-hidden="true" />
 </template>
 
 <style scoped>

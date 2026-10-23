@@ -47,17 +47,13 @@ describe('upload plan', () => {
     },
   }
 
-  it('puts every file under the household path contract the database policies require', () => {
-    const household = '11111111-2222-3333-4444-555555555555'
-    const author = '99999999-8888-7777-6666-555555555555'
-    const plan = buildUploadPlan({ household, author, manifest })
-    expect(plan).toHaveLength(4)
-    for (const step of plan) {
-      expect(step.path.startsWith(`${household}/`)).toBe(true)
-      // user-owned media must also sit in the author's own folder (storage + table CHECK constraints)
-      if (step.type !== 'capsule') expect(step.path.startsWith(`${household}/${author}/`)).toBe(true)
-    }
-    expect(plan.filter((s) => s.type === 'capsule').every((s) => s.bucket === 'time-capsule' && s.contentType === 'text/html')).toBe(true)
+  it('plans the two originals as capsule files and the art and song as ordinary media', () => {
+    const plan = buildUploadPlan({ manifest })
+    expect(plan.map((step) => step.type)).toEqual(['capsule', 'capsule', 'sticker-sheet', 'track'])
+    expect(plan.filter((step) => step.type === 'capsule').every((step) => step.fileKind === 'capsule' && step.contentType === 'text/html')).toBe(true)
+    expect(plan.find((step) => step.type === 'sticker-sheet')?.fileKind).toBe('sticker')
+    expect(plan.find((step) => step.type === 'track')?.fileKind).toBe('music')
+    for (const step of plan) expect(step.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 
   it('describes 18 sticker cells in a 3 × 6 sheet', () => {

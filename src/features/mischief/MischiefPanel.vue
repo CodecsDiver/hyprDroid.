@@ -9,17 +9,15 @@ import { mischiefConsent } from '@/state/moods'
 import { prefs } from '@/state/prefs'
 import { useAction } from '@/state/useAsync'
 import { updateSettings } from '@/state/household'
-import { session } from '@/state/session'
 import type { PanelDefinition } from '../panels'
 
 defineProps<{ definition: PanelDefinition }>()
 defineEmits<{ close: [] }>()
 
 const setConsent = useAction(async (changes: { allowMischief?: boolean; allowDisruptiveMischief?: boolean }) => {
-  if (!session.userId) return
   // Turning mischief off also turns the stronger opt-in off.
   const next = changes.allowMischief === false ? { ...changes, allowDisruptiveMischief: false } : changes
-  await updateSettings(session.userId, next)
+  await updateSettings(next)
 })
 
 const send = useAction(async (effect: MischiefEffect) => {
@@ -31,7 +29,7 @@ const send = useAction(async (effect: MischiefEffect) => {
 function preview(effect: MischiefEffect): void {
   playSfx('pop')
   if (isRoomEffect(effect.id)) startRoomEffect(effect.id)
-  else playEffect({ type: 'mischief', effect: effect.id, text: `Boo, ${home.me?.displayName ?? 'you'}!` }, effect.durationMs)
+  else playEffect({ type: 'mischief', effect: effect.id, text: `Boo, ${home.me?.name ?? 'you'}!` }, effect.durationMs)
 }
 </script>
 

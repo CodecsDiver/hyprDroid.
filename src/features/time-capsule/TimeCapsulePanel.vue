@@ -5,7 +5,7 @@ import PanelShell from '@/components/PanelShell.vue'
 import ResourceView from '@/components/ResourceView.vue'
 import { buildLoadMessage, isViewerReady, VIEWER_SANDBOX, verifyArchive } from '@/capsule/integrity'
 import { fetchCapsuleItems, type CapsuleItem } from '@/data/repos/capsule'
-import { downloadPrivate } from '@/data/storage'
+import { downloadFile } from '@/data/files'
 import { formatBytes } from '@/domain/time'
 import { useAction, useResource } from '@/state/useAsync'
 import type { PanelDefinition } from '../panels'
@@ -29,8 +29,7 @@ onBeforeUnmount(() => window.removeEventListener('message', onMessage))
 
 const open = useAction(async (item: CapsuleItem) => {
   status.value = 'verifying'
-  const blob = await downloadPrivate('time-capsule', item.storagePath)
-  const bytes = await blob.arrayBuffer()
+  const bytes = await downloadFile(item.fileId)
   const result = await verifyArchive(bytes, item.sha256)
   if (!result.ok) {
     status.value = 'failed'

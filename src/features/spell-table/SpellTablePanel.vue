@@ -9,7 +9,7 @@ import { MAX_INGREDIENTS, SPELL_EFFECTS, STARTER_INGREDIENTS, spellEffect, type 
 import { cleanText, ValidationError } from '@/domain/validate'
 import { playEffect } from '@/effects/bus'
 import { inboxEntries } from '@/state/eventHandlers'
-import { home, partnerName } from '@/state/household'
+import { partnerName } from '@/state/household'
 import { sendEvent } from '@/state/live'
 import { session } from '@/state/session'
 import { useAction, useResource } from '@/state/useAsync'
@@ -51,8 +51,7 @@ function previewSpell(name: string, effect: SpellEffectId, color: string, messag
 }
 
 const save = useAction(async () => {
-  if (!home.household) return
-  await saveRecipe(home.household.id, form.value)
+  await saveRecipe(form.value)
   await recipes.reload()
 }, { success: 'Recipe saved to the table.' })
 

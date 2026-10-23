@@ -1,43 +1,44 @@
-/** Maps Postgres/PostgREST/network failures onto stable, user-presentable errors. */
+/** Maps API error codes and network failures onto stable, user-presentable errors. */
 
 export type ErrorCode =
-  | 'not_authenticated' | 'not_in_household' | 'no_partner' | 'invalid_payload' | 'invalid_kind' | 'invalid_mood'
-  | 'rate_limited' | 'recipient_declined' | 'consent_required' | 'invalid_invite' | 'invalid_email' | 'invalid_name'
-  | 'household_full' | 'already_in_household' | 'not_found' | 'limit_reached' | 'permission' | 'validation'
+  | 'not_authenticated' | 'no_partner' | 'invalid_payload' | 'invalid_kind' | 'invalid_mood' | 'rate_limited'
+  | 'recipient_declined' | 'consent_required' | 'not_found' | 'limit_reached' | 'permission' | 'validation'
+  | 'invalid_credentials' | 'locked' | 'too_large' | 'conflict' | 'immutable' | 'server_not_configured' | 'csrf'
   | 'network' | 'unknown'
 
 const KNOWN_CODES: ReadonlySet<string> = new Set<ErrorCode>([
-  'not_authenticated', 'not_in_household', 'no_partner', 'invalid_payload', 'invalid_kind', 'invalid_mood', 'rate_limited',
-  'recipient_declined', 'consent_required', 'invalid_invite', 'invalid_email', 'invalid_name', 'household_full',
-  'already_in_household', 'not_found', 'limit_reached',
+  'not_authenticated', 'no_partner', 'invalid_payload', 'invalid_kind', 'invalid_mood', 'rate_limited',
+  'recipient_declined', 'consent_required', 'not_found', 'limit_reached', 'invalid_credentials', 'locked', 'too_large', 'conflict', 'immutable',
+  'server_not_configured', 'csrf', 'permission',
 ])
 
 const USER_MESSAGES: Record<ErrorCode, string> = {
   not_authenticated: 'Please sign in again.',
-  not_in_household: 'Join or create your household first.',
-  no_partner: 'Your partner has not joined the household yet.',
+  no_partner: 'Your partner is not available right now.',
   invalid_payload: 'That message could not be sent because something in it is not valid.',
   invalid_kind: 'That kind of message is not supported.',
   invalid_mood: 'That mood is not available.',
   rate_limited: 'Slow down a little — too many messages at once.',
   recipient_declined: 'They have not turned that on. Mischief only works when both of you opt in.',
   consent_required: 'Both of you need to opt in to listening together first.',
-  invalid_invite: 'This invite is not valid for the account you are signed in with, or it has expired.',
-  invalid_email: 'That email address does not look right.',
-  invalid_name: 'Please enter a name between 1 and 60 characters.',
-  household_full: 'This household already has two people.',
-  already_in_household: 'This account already belongs to a household.',
   not_found: 'That item could not be found.',
   limit_reached: 'You have reached the limit for this.',
   permission: 'You do not have permission to do that.',
   validation: 'Please check what you entered.',
+  invalid_credentials: 'That name and password do not match.',
+  locked: 'Too many attempts. Please wait a few minutes and try again.',
+  too_large: 'That is too large.',
+  conflict: 'Something changed at the same moment. Please try again.',
+  immutable: 'Archived items can never be changed.',
+  server_not_configured: 'The server has not been set up yet.',
+  csrf: 'The request was blocked for your safety. Reload the page and try again.',
   network: 'You appear to be offline. We will keep trying.',
   unknown: 'Something went wrong. Please try again.',
 }
 
 /** Errors that will never succeed on retry. */
 const PERMANENT: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
-  'invalid_payload', 'invalid_kind', 'recipient_declined', 'no_partner', 'not_in_household', 'permission', 'validation',
+  'invalid_payload', 'invalid_kind', 'recipient_declined', 'no_partner', 'permission', 'validation',
 ])
 
 export class AppError extends Error {

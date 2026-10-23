@@ -8,7 +8,6 @@ import { addIdea, addIdeas, completeIdea, deleteIdea, fetchIdeas, setFavorite } 
 import { DATE_CATEGORIES, drawIdea, STARTER_IDEAS, type DateCategory, type DateIdea } from '@/domain/dateJar'
 import { relativeTime } from '@/domain/time'
 import { reducedMotion } from '@/state/prefs'
-import { home } from '@/state/household'
 import { useAction, useResource } from '@/state/useAsync'
 import type { PanelDefinition } from '../panels'
 
@@ -43,15 +42,13 @@ function draw(): void {
 }
 
 const add = useAction(async () => {
-  if (!home.household) return
-  await addIdea(home.household.id, form.value)
+  await addIdea(form.value)
   form.value = { title: '', notes: '', category: form.value.category }
   await ideas.reload()
 }, { success: 'Added to the jar.' })
 
 const addStarters = useAction(async () => {
-  if (!home.household) return
-  await addIdeas(home.household.id, STARTER_IDEAS)
+  await addIdeas(STARTER_IDEAS)
   await ideas.reload()
 }, { success: 'Starter ideas added.' })
 

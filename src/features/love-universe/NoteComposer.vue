@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { addLoveNote, deleteLoveNote, fetchLoveNotes, type LoveNote } from '@/data/repos/loveUniverse'
 import { playSfx } from '@/audio/engine'
-import { home, partnerName } from '@/state/household'
+import { partnerName } from '@/state/household'
 import { sendEvent } from '@/state/live'
 import { session } from '@/state/session'
 import { useAction, useResource } from '@/state/useAsync'
@@ -22,8 +22,7 @@ const sendNow = useAction(async (text: string, kind: 'love' | 'miss') => {
 }, { success: 'Sent. If they are offline, it will be waiting for them.' })
 
 const save = useAction(async () => {
-  if (!home.household) return
-  await addLoveNote(home.household.id, voice.value, body.value)
+  await addLoveNote(voice.value, body.value)
   body.value = ''
   await notes.reload()
 }, { success: 'Saved to your notes for them.' })

@@ -112,7 +112,7 @@ function select(placement: PlannedPlacement): void {
             </li>
           </ul>
         </details>
-        <p class="hint">The garden is stored in your shared household, so it looks the same on both devices and survives reloads.</p>
+        <p class="hint">The garden is stored on your server, shared by both of you, so it looks the same on both devices and survives reloads.</p>
       </section>
     </div>
   </PanelShell>

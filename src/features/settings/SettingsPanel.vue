@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import InvitePartner from '@/components/InvitePartner.vue'
 import PanelShell from '@/components/PanelShell.vue'
-import { updateDisplayName } from '@/data/repos/household'
 import type { UserSettings } from '@/data/repos/settings'
 import { home, myName, partnerName, updateSettings } from '@/state/household'
 import { canInstall, promptInstall } from '@/state/install'
 import { notificationsSupported, requestNotificationPermission } from '@/state/notifications'
 import { prefs } from '@/state/prefs'
-import { session, signOut } from '@/state/session'
+import { signOut } from '@/state/session'
 import { openPanel } from '@/state/ui'
 import { showToast } from '@/state/toasts'
 import { useAction } from '@/state/useAsync'
@@ -18,17 +16,11 @@ defineProps<{ definition: PanelDefinition }>()
 defineEmits<{ close: [] }>()
 
 const permission = ref<NotificationPermission>(notificationsSupported() ? Notification.permission : 'denied')
-const name = ref(home.me?.displayName ?? '')
 const hours = Array.from({ length: 24 }, (_, h) => h)
 
 const save = useAction(async (changes: Partial<UserSettings>) => {
-  if (session.userId) await updateSettings(session.userId, changes)
+  await updateSettings(changes)
 })
-const rename = useAction(async () => {
-  if (!session.userId || !name.value.trim()) return
-  await updateDisplayName(session.userId, name.value.trim())
-  if (home.me) home.me.displayName = name.value.trim()
-}, { success: 'Name updated.' })
 const leave = useAction(async () => {
   if (window.confirm('Sign out of Signal Home on this device?')) await signOut()
 })
@@ -55,12 +47,7 @@ const toggles: { key: keyof UserSettings; label: string }[] = [
     <div class="stack">
       <section class="stack" aria-labelledby="acct">
         <h3 id="acct">You</h3>
-        <p class="hint">Signed in as {{ session.email }}. Partner: {{ home.partner ? partnerName : 'not joined yet' }}.</p>
-        <form class="row" @submit.prevent="rename.run()">
-          <div class="field grow"><label for="display-name">Your name</label><input id="display-name" v-model="name" class="input" maxlength="40" required /></div>
-          <button type="submit" class="btn btn--small" :disabled="rename.busy.value || name.trim() === myName">Save</button>
-        </form>
-        <InvitePartner v-if="!home.partner" />
+        <p class="hint">Signed in as {{ myName }}. Your partner is {{ partnerName }}.</p>
         <button type="button" class="btn btn--small btn--quiet" @click="leave.run()">Sign out</button>
       </section>
 

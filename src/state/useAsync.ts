@@ -1,6 +1,6 @@
 import { onMounted, onScopeDispose, ref, type Ref } from 'vue'
 import { toAppError } from '@/data/errors'
-import type { WatchedTable } from '@/data/realtime'
+import type { WatchedTable } from '@/data/sync'
 import { onTableChange } from './live'
 import { showToast } from './toasts'
 
@@ -12,7 +12,7 @@ export interface Resource<T> {
 }
 
 /**
- * Loads data on mount and again whenever any watched table changes (realtime).
+ * Loads data on mount and again whenever any watched table changes (live sync).
  * Late responses from superseded loads are discarded.
  */
 export function useResource<T>(loader: () => Promise<T>, initial: T, tables: readonly WatchedTable[] = []): Resource<T> {

@@ -1,15 +1,12 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { EVENT_KINDS, parseEventRow, REACTIONS, sanitizePayload } from '@/domain/events'
-import { MISCHIEF_EFFECTS } from '@/domain/mischief'
-import { MOOD_KEYS } from '@/domain/moods'
-import { SPELL_EFFECT_IDS } from '@/domain/spells'
+import { EVENT_KINDS, parseEvent, REACTIONS, sanitizePayload } from '@/domain/events'
 
 const uuid = () => crypto.randomUUID()
 const row = (overrides: Record<string, unknown> = {}) => ({
-  id: uuid(), household_id: uuid(), sender_id: uuid(), recipient_id: uuid(), client_event_id: uuid(),
-  kind: 'love_ping', payload: { reaction: 'heart' }, created_at: '2025-01-01T00:00:00Z', expires_at: '2025-01-08T00:00:00Z', seen_at: null,
+  id: uuid(), senderId: 'daniel', recipientId: 'vee', clientEventId: uuid(),
+  kind: 'love_ping', payload: { reaction: 'heart' }, createdAt: '2025-01-01T00:00:00Z', expiresAt: '2025-01-08T00:00:00Z', seenAt: null,
   ...overrides,
 })
 
@@ -41,9 +38,9 @@ describe('sanitizePayload', () => {
   })
 })
 
-describe('parseEventRow', () => {
+describe('parseEvent', () => {
   it('parses a well-formed row', () => {
-    const parsed = parseEventRow(row())
+    const parsed = parseEvent(row())
     expect(parsed?.kind).toBe('love_ping')
     expect(parsed?.payload).toEqual({ reaction: 'heart' })
   })
@@ -51,46 +48,28 @@ describe('parseEventRow', () => {
   it.each([
     ['unknown kind', row({ kind: 'delete_all' })],
     ['bad id', row({ id: 'nope' })],
-    ['bad timestamp', row({ created_at: 'yesterday-ish' })],
+    ['bad timestamp', row({ createdAt: 'yesterday-ish' })],
     ['hostile payload', row({ payload: { reaction: '<img onerror=x>' } })],
     ['not an object', 'a string'],
     ['null', null],
   ])('rejects %s', (_name, input) => {
-    expect(parseEventRow(input)).toBeNull()
+    expect(parseEvent(input)).toBeNull()
   })
 
   it('drops unexpected payload keys from incoming rows too', () => {
-    const parsed = parseEventRow(row({ payload: { reaction: 'heart', html: '<b>x</b>' } }))
+    const parsed = parseEvent(row({ payload: { reaction: 'heart', html: '<b>x</b>' } }))
     expect(parsed?.payload).toEqual({ reaction: 'heart' })
   })
 })
 
-describe('client/database schema sync', () => {
-  const sql = readdirSync(join(import.meta.dirname, '..', '..', 'supabase', 'migrations'))
-    .sort()
-    .map((file) => readFileSync(join(import.meta.dirname, '..', '..', 'supabase', 'migrations', file), 'utf8'))
-    .join('\n')
-  const arrayIn = (pattern: RegExp): string[] => {
-    const match = pattern.exec(sql)
-    if (!match) throw new Error(`pattern not found: ${pattern}`)
-    return [...match[1]!.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]!)
-  }
-
-  it('event kinds match the events.kind CHECK constraint', () => {
-    expect(arrayIn(/kind in \(([^)]*)\)\)/).sort()).toEqual([...EVENT_KINDS].sort())
+describe('server and client share one definition of events', () => {
+  it('the server validates payloads with the very same sanitiser the client uses', async () => {
+    const source = readFileSync(join(import.meta.dirname, '..', '..', 'server', 'routes', 'events.ts'), 'utf8')
+    expect(source).toMatch(/from '\.\.\/\.\.\/src\/domain\/events'/)
+    expect(source).toMatch(/sanitizePayload\(input\.kind/)
   })
-  it('reactions match the love_ping validator', () => {
-    expect(arrayIn(/'reaction',\s*array\[([^\]]*)\]/).sort()).toEqual([...REACTIONS].sort())
-  })
-  it('mischief effects and their disruptive flags match', () => {
-    expect(arrayIn(/mischief_effects\(\)[\s\S]*?array\[([^\]]*)\]/).sort()).toEqual(MISCHIEF_EFFECTS.map((e) => e.id).sort())
-    const disruptiveSql = arrayIn(/mischief_is_disruptive[\s\S]*?array\[([^\]]*)\]/).sort()
-    expect(disruptiveSql).toEqual(MISCHIEF_EFFECTS.filter((e) => e.disruptive).map((e) => e.id).sort())
-  })
-  it('spell effects match', () => {
-    expect(arrayIn(/spell_effects\(\)[\s\S]*?array\[([^\]]*)\]/).sort()).toEqual([...SPELL_EFFECT_IDS].sort())
-  })
-  it('mood keys match', () => {
-    expect(arrayIn(/mood_keys\(\)[\s\S]*?array\[([^\]]*)\]/).sort()).toEqual([...MOOD_KEYS].sort())
+  it('exposes every event kind', () => {
+    expect(EVENT_KINDS).toContain('love_ping')
+    expect(REACTIONS).toContain('custom')
   })
 })

@@ -9,5 +9,7 @@ coverage/
 # Private source assets (originals, sticker art, song, intimate note text).
 # This repository is public: nothing in private/ may ever be committed.
 private/
-supabase/.temp/
-supabase/.branches/
+# Local data (dev server and standalone server store everything in these folders).
+.data/
+data/
+dist-server/

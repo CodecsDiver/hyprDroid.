@@ -17,6 +17,12 @@ export class ServerClock {
     this.offsetMs = estimateClockOffset(this.samples)
   }
 
+  /** Feeds one request/response timing sample (the lowest-latency samples win). */
+  observe(sample: ClockSample): void {
+    this.samples = [...this.samples, sample].slice(-9)
+    this.offsetMs = estimateClockOffset(this.samples)
+  }
+
   /** Current server time in ms, estimated. */
   serverNow(): number {
     return this.now() + this.offsetMs

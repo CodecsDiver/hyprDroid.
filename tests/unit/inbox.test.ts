@@ -5,8 +5,8 @@ import { EventInbox } from '@/data/inbox'
 const uuid = () => crypto.randomUUID()
 const NOW = Date.parse('2025-06-01T12:00:00Z')
 const row = (id = uuid()) => ({
-  id, household_id: uuid(), sender_id: uuid(), recipient_id: uuid(), client_event_id: uuid(), kind: 'heart_tap', payload: {},
-  created_at: new Date(NOW - 500).toISOString(), expires_at: new Date(NOW + 60_000).toISOString(), seen_at: null,
+  id, senderId: 'daniel', recipientId: 'vee', clientEventId: uuid(), kind: 'heart_tap', payload: {},
+  createdAt: new Date(NOW - 500).toISOString(), expiresAt: new Date(NOW + 60_000).toISOString(), seenAt: null,
 })
 
 function setup(fetchUnseen: () => Promise<unknown[]> = async () => []) {

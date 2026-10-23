@@ -4,16 +4,15 @@ defineProps<{ problems: string[] }>()
 
 <template>
   <main class="center">
-    <h1>Signal Home needs a backend</h1>
-    <p>The app is built, but it is not connected to a Supabase project yet. This is expected on a first run.</p>
-    <ul class="problems" role="list">
+    <h1>Signal Home is not set up yet</h1>
+    <p>The app is deployed, but the server has no people or secrets configured. This is expected on a first deploy.</p>
+    <ul v-if="problems.length > 0" class="problems" role="list">
       <li v-for="problem in problems" :key="problem">{{ problem }}</li>
     </ul>
     <ol class="steps">
-      <li>Create a Supabase project and run the SQL files in <code>supabase/migrations</code>, in order.</li>
-      <li>Disable public sign-ups and create the two accounts (Authentication → Users).</li>
-      <li>Copy <code>.env.example</code> to <code>.env.local</code> and set the project URL and the <strong>anon</strong> key.</li>
-      <li>Restart the dev server. Full instructions are in <code>docs/SETUP.md</code>.</li>
+      <li>Run <code>npm run setup:auth</code> on your computer. It asks for two names and passwords and prints three values.</li>
+      <li>In Netlify: Site configuration → Environment variables. Add <code>SIGNAL_USERS</code>, <code>SIGNAL_SESSION_SECRET</code> and <code>SIGNAL_ADMIN_TOKEN</code>.</li>
+      <li>Trigger a new deploy. Details are in <code>docs/SETUP.md</code>.</li>
     </ol>
   </main>
 </template>

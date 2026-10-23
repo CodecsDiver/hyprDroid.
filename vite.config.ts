@@ -1,9 +1,10 @@
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
+import { signalHomeApi } from './server/vite-plugin'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), signalHomeApi()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: { target: 'es2022', sourcemap: false, chunkSizeWarningLimit: 900 },
   test: {

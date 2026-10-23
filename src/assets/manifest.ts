@@ -8,8 +8,8 @@
  * Sources:
  *   { kind: 'public',  path: '/assets/...' }   shipped with the app. ONLY for
  *                                               assets that are safe to be public.
- *   { kind: 'private', bucket, path }          private Supabase Storage, fetched
- *                                               with a signed URL after sign-in.
+ *   { kind: 'private', fileId }                a file stored on the server (see POST /api/files),
+ *                                               served only to the two signed-in people.
  *                                               Use this for anything personal.
  */
 
@@ -17,7 +17,7 @@ import type { AmbientId } from '@/domain/environment'
 
 export type AssetSource =
   | { kind: 'public'; path: string }
-  | { kind: 'private'; bucket: 'music' | 'covers' | 'vault' | 'stickers'; path: string }
+  | { kind: 'private'; fileId: string }
 
 export interface ModelAsset {
   source: AssetSource | null
@@ -84,7 +84,7 @@ export const DEFAULT_MANIFEST: AssetManifest = {
   // Synthesised fallbacks play for every sfx whose source is null (src/audio/synth.ts).
   sfx: Object.fromEntries(SFX_IDS.map((id) => [id, none(id === 'rotate' || id === 'zoom' ? 0.16 : 0.3)])) as Record<SfxId, AudioAsset>,
   // The original mood loops (rain, gentle, sleep, reunion, cuddly) were separate audio files that
-  // were not part of the supplied sources. Provide them here (private bucket recommended).
+  // were not part of the supplied sources. Provide them here (a private server file is recommended).
   music: {
     ambient: {
       rain: none(0.24), gentle: none(0.34), sleep: none(0.32), reunion: none(0.34), cuddly: none(0.33),
@@ -105,8 +105,8 @@ function checkSource(source: AssetSource | null, path: string, issues: ManifestI
     if (!source.path.startsWith('/assets/') || source.path.includes('..') || /^\/assets\/.*\/\//.test(source.path)) {
       issues.push({ path, message: 'public paths must live under /assets/ and may not contain ".."' })
     }
-  } else if (!source.path || source.path.includes('..') || source.path.startsWith('/')) {
-    issues.push({ path, message: 'private paths must be relative storage paths' })
+  } else if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(source.fileId)) {
+    issues.push({ path, message: 'private sources need a file id (uuid) from the server' })
   }
 }
 
@@ -149,19 +149,19 @@ export function validateManifest(manifest: AssetManifest, objectIds: readonly st
   return issues
 }
 
-export type SignedUrlFn = (bucket: 'music' | 'covers' | 'vault' | 'stickers', path: string) => Promise<string>
+export type PrivateUrlFn = (fileId: string) => string | Promise<string>
 
 export interface AssetResolver {
   /** URL to fetch the asset from, or null when the manifest has no source for it. */
   url(source: AssetSource | null): Promise<string | null>
 }
 
-export function createAssetResolver(signed: SignedUrlFn, base = '/'): AssetResolver {
+export function createAssetResolver(privateUrl: PrivateUrlFn, base = '/'): AssetResolver {
   return {
     async url(source) {
       if (!source) return null
       if (source.kind === 'public') return base.replace(/\/$/, '') + source.path
-      return signed(source.bucket, source.path)
+      return privateUrl(source.fileId)
     },
   }
 }

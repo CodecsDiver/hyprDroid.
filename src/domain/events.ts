@@ -35,7 +35,6 @@ export interface EventPayloadMap {
 
 export interface LoveEvent<K extends EventKind = EventKind> {
   id: string
-  householdId: string
   senderId: string
   recipientId: string
   clientEventId: string
@@ -100,27 +99,20 @@ export function sanitizePayload(kind: EventKind, raw: unknown): EventPayloadMap[
   }
 }
 
-/** Parses a raw database/realtime row into a LoveEvent, or returns null if it is malformed. */
-export function parseEventRow(row: unknown): LoveEvent | null {
+/** Parses an event received from the API into a LoveEvent, or returns null if it is malformed. */
+export function parseEvent(row: unknown): LoveEvent | null {
   if (!isRecord(row)) return null
-  const { id, household_id, sender_id, recipient_id, client_event_id, kind, payload, created_at, expires_at, seen_at } = row
-  if (![id, household_id, sender_id, recipient_id, client_event_id].every(isUuid)) return null
+  const { id, senderId, recipientId, clientEventId, kind, payload, createdAt, expiresAt, seenAt } = row
+  if (!isUuid(id) || !isUuid(clientEventId)) return null
+  if (typeof senderId !== 'string' || typeof recipientId !== 'string' || !senderId || !recipientId) return null
   if (typeof kind !== 'string' || !(EVENT_KINDS as readonly string[]).includes(kind)) return null
-  if (typeof created_at !== 'string' || typeof expires_at !== 'string') return null
-  if (Number.isNaN(Date.parse(created_at)) || Number.isNaN(Date.parse(expires_at))) return null
+  if (typeof createdAt !== 'string' || typeof expiresAt !== 'string') return null
+  if (Number.isNaN(Date.parse(createdAt)) || Number.isNaN(Date.parse(expiresAt))) return null
   try {
     const eventKind = kind as EventKind
     return {
-      id: id as string,
-      householdId: household_id as string,
-      senderId: sender_id as string,
-      recipientId: recipient_id as string,
-      clientEventId: client_event_id as string,
-      kind: eventKind,
-      payload: sanitizePayload(eventKind, payload ?? {}),
-      createdAt: created_at,
-      expiresAt: expires_at,
-      seenAt: typeof seen_at === 'string' ? seen_at : null,
+      id, senderId, recipientId, clientEventId, kind: eventKind,
+      payload: sanitizePayload(eventKind, payload ?? {}), createdAt, expiresAt, seenAt: typeof seenAt === 'string' ? seenAt : null,
     }
   } catch {
     return null

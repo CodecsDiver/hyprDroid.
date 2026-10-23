@@ -7,22 +7,24 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",
+    "build:standalone": "node scripts/build-standalone.mjs",
+    "start": "node dist-server/standalone.mjs",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "node tests/e2e/smoke.mjs",
     "verify": "npm run typecheck && npm run test && vite build && node scripts/verify-dist.mjs",
+    "setup:auth": "node scripts/setup-auth.mjs",
     "assets:extract": "node scripts/extract-source-assets.mjs",
-    "assets:upload": "node scripts/upload-private-assets.mjs",
-    "serve:dist": "node scripts/serve-dist.mjs"
+    "assets:upload": "node scripts/upload-private-assets.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.0",
+    "@netlify/blobs": "^11.1.6",
     "three": "^0.170.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.2.17",
     "@types/node": "^22.10.0",
     "@types/three": "^0.170.0",
     "@vitejs/plugin-vue": "^5.2.1",
@@ -31,7 +33,8 @@
     "typescript": "~5.7.2",
     "vite": "^6.0.7",
     "vitest": "^3.2.7",
-    "vue-tsc": "^2.2.0"
+    "vue-tsc": "^2.2.0",
+    "esbuild": "^0.24.0"
   },
   "engines": {
     "node": ">=20"

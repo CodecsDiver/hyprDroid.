@@ -10,19 +10,18 @@ provided yet*: the app uses a procedural placeholder (3D) or a synthesised sound
 | Sound effects (16 ids) | **Synthesised** (ported from the originals); no samples supplied |
 | Mood loops (rain, gentle, sleep, reunion, cuddly) | **Not provided**: silent until you add files |
 | Textures, UI images | None (placeholder colours; ♥ glyph instead of a logo) |
-| Sticker art, room song, notes, originals | Real, **private** — loaded into Supabase by `npm run assets:upload` |
+| Sticker art, room song, notes, originals | Real, **private** — loaded into your running app by `npm run assets:upload` |
 
 ## Sources
 
 ```ts
 { kind: 'public',  path: '/assets/3d/house.glb' }                 // served from public/assets — only for art that is fine to be public
-{ kind: 'private', bucket: 'music', path: '<household>/<user>/loop.mp3' }  // private Storage, signed URL after sign-in
+{ kind: 'private', fileId: '<uuid from POST /api/files>' }       // private server file, served only to the two signed-in people
 ```
 
-Private sources can use the buckets `music`, `covers`, `vault`, `stickers` (they restrict file types — audio / images).
-**GLB models cannot go in those buckets.** Either ship the GLB as a `public` asset (the room geometry is not sensitive),
-or create a private `models` bucket (`model/gltf-binary`, read policy copied from `music`) and add it to `AssetSource`
-and `SignedUrlFn`.
+Private sources use a server file id. Upload through the API (`uploadFile` in `src/data/files.ts` shows the three calls); the file kinds
+restrict types (`music`: audio, `cover`/`sticker`: images). **GLB models are not an allowed file kind.** Ship the GLB as a `public` asset
+(the room geometry is not sensitive), or add a `model` kind to `server/routes/files.ts` (`FILE_RULES` and `server/sniff.ts`) first.
 
 ## 3D environment (Blender → GLB)
 

@@ -7,7 +7,7 @@ import { cues, playSfx } from '@/audio/engine'
 import { addPreset, deletePreset, fetchPresets } from '@/data/repos/reactions'
 import { fetchRecentEvents } from '@/data/repos/events'
 import { describeEvent, describeOwnEvent, REACTION_META } from '@/domain/eventText'
-import { parseEventRow, REACTIONS, REACTION_ANIMATIONS, type Reaction, type ReactionAnimation } from '@/domain/events'
+import { REACTIONS, REACTION_ANIMATIONS, type Reaction, type ReactionAnimation } from '@/domain/events'
 import { roseProgress } from '@/domain/rose'
 import { relativeTime } from '@/domain/time'
 import { playEffect } from '@/effects/bus'
@@ -25,11 +25,8 @@ const message = ref('')
 const rose = computed(() => roseProgress(home.bondXp))
 const quick = REACTIONS.filter((reaction): reaction is Exclude<Reaction, 'custom'> => reaction !== 'custom')
 
-const presets = useResource(() => fetchPresets(session.userId ?? ''), [] as Awaited<ReturnType<typeof fetchPresets>>)
-const recent = useResource(async () => {
-  const rows = await fetchRecentEvents(['love_ping', 'hug', 'heart_tap', 'sticker', 'love_note'], 30)
-  return rows.map(parseEventRow).filter((event) => event !== null)
-}, [] as NonNullable<ReturnType<typeof parseEventRow>>[], [])
+const presets = useResource(() => fetchPresets(), [] as Awaited<ReturnType<typeof fetchPresets>>)
+const recent = useResource(() => fetchRecentEvents(['love_ping', 'hug', 'heart_tap', 'sticker', 'love_note'], 30), [] as Awaited<ReturnType<typeof fetchRecentEvents>>)
 watch(() => inboxEntries.length, () => void recent.reload())
 
 const history = computed(() =>
@@ -56,8 +53,7 @@ const send = useAction(async (reaction: Reaction, extra: { label?: string; emoji
 
 const form = ref({ label: '', emoji: '💖', animation: 'float' as ReactionAnimation })
 const addCustom = useAction(async () => {
-  if (!home.household) return
-  await addPreset(home.household.id, form.value)
+  await addPreset(form.value)
   form.value = { label: '', emoji: '💖', animation: 'float' }
   await presets.reload()
 }, { success: 'Reaction added.' })

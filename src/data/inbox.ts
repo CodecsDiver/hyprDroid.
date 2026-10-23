@@ -1,5 +1,5 @@
 import type { EventDispatcher } from '@/domain/eventDispatcher'
-import { parseEventRow, type LoveEvent } from '@/domain/events'
+import { parseEvent, type LoveEvent } from '@/domain/events'
 
 export interface InboxDeps {
   dispatcher: EventDispatcher
@@ -21,7 +21,7 @@ export class EventInbox {
   constructor(private readonly deps: InboxDeps) {}
 
   async receive(rows: readonly unknown[]): Promise<void> {
-    const events = rows.map(parseEventRow).filter((event): event is LoveEvent => event !== null)
+    const events = rows.map(parseEvent).filter((event): event is LoveEvent => event !== null)
     const result = await this.deps.dispatcher.dispatch(events)
     // Duplicates are re-acknowledged too: an earlier ack may have been lost with the connection.
     for (const id of [...result.handled, ...result.duplicates]) this.unacked.add(id)
