@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { storageIsPersistent, PEOPLE } from '@/local/backend'
 import { useManifestImage } from '@/state/assets'
-import { signInWithPassword } from '@/state/session'
+import { chooseWhoIsHere } from '@/state/session'
 import { useAction } from '@/state/useAsync'
 
-const username = ref('')
-const password = ref('')
 const logo = useManifestImage('logo')
-
-const signIn = useAction(async () => {
-  await signInWithPassword(username.value, password.value)
+const choose = useAction(async (id: (typeof PEOPLE)[number]['id']) => {
+  await chooseWhoIsHere(id)
 })
 </script>
 
@@ -18,20 +15,13 @@ const signIn = useAction(async () => {
     <img v-if="logo.url.value" class="auth__logo" :src="logo.url.value" :alt="logo.alt.value" width="96" height="96" />
     <div v-else class="auth__heart" aria-hidden="true">♥</div>
     <h1>Signal Home</h1>
-    <p class="hint auth__sub">A private home for two. Sign in to come inside.</p>
+    <p class="hint auth__sub">A private home for two. Who is here?</p>
 
-    <form class="stack auth__form" @submit.prevent="signIn.run()">
-      <div class="field">
-        <label for="username">Name</label>
-        <input id="username" v-model="username" class="input" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" v-model="password" class="input" type="password" autocomplete="current-password" required />
-      </div>
-      <button type="submit" class="btn btn--primary" :disabled="signIn.busy.value">{{ signIn.busy.value ? 'Signing in…' : 'Sign in' }}</button>
-    </form>
-    <p class="hint">Just the two of you. There is no sign-up.</p>
+    <div class="stack auth__form">
+      <button v-for="person in PEOPLE" :key="person.id" type="button" class="btn btn--primary" :disabled="choose.busy.value" @click="choose.run(person.id)">I’m {{ person.name }}</button>
+    </div>
+    <p class="hint">Everything lives only in this browser. There are no accounts, and nothing is sent anywhere.</p>
+    <p v-if="!storageIsPersistent()" class="hint" role="status">This browser would not give the page any storage (a private window?), so everything will be forgotten when you close it.</p>
   </main>
 </template>
 

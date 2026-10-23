@@ -15,5 +15,5 @@
     "noEmit": true,
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["server/**/*.ts", "netlify/**/*.mts", "src/domain/**/*.ts", "src/shared/**/*.ts"]
+  "include": ["server/**/*.ts", "src/domain/**/*.ts", "src/shared/**/*.ts"]
 }

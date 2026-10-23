@@ -3,24 +3,20 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "A private, cozy shared home for two people.",
+  "description": "A private, cozy shared home for two, as one HTML file.",
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",
-    "build:standalone": "node scripts/build-standalone.mjs",
-    "start": "node dist-server/standalone.mjs",
+    "build:private": "node scripts/build-private.mjs",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "node tests/e2e/smoke.mjs",
     "verify": "npm run typecheck && npm run test && vite build && node scripts/verify-dist.mjs",
-    "setup:auth": "node scripts/setup-auth.mjs",
-    "assets:extract": "node scripts/extract-source-assets.mjs",
-    "assets:upload": "node scripts/upload-private-assets.mjs"
+    "assets:extract": "node scripts/extract-source-assets.mjs"
   },
   "dependencies": {
-    "@netlify/blobs": "^11.1.6",
     "three": "^0.170.0",
     "vue": "^3.5.13"
   },
@@ -34,7 +30,7 @@
     "vite": "^6.0.7",
     "vitest": "^3.2.7",
     "vue-tsc": "^2.2.0",
-    "esbuild": "^0.24.0"
+    "vite-plugin-singlefile": "^2.0.3"
   },
   "engines": {
     "node": ">=20"

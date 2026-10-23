@@ -29,8 +29,8 @@ export const ROUTES: readonly Pick<Route, 'method' | 'pattern' | 'auth'>[] = bui
 const STATE_CHANGING = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 /**
- * Creates the request handler. Pure `Request` → `Response`, so it runs unchanged as a Netlify Function,
- * inside the Vite dev server, in the standalone Node server, and in tests.
+ * Creates the request handler. Pure `Request` → `Response`, so it runs unchanged inside the page
+ * (src/local) and on Node in tests.
  */
 export function createApi(ctx: Ctx): (request: Request) => Promise<Response> {
   const router = buildRouter()

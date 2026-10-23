@@ -10,7 +10,6 @@ import { provideAssets } from '@/state/assets'
 import AuthScreen from '@/screens/AuthScreen.vue'
 import HomeScene from '@/screens/HomeScene.vue'
 import ScenePreview from '@/screens/ScenePreview.vue'
-import SetupRequired from '@/screens/SetupRequired.vue'
 import { home, loadHome, resetHome } from '@/state/household'
 import { initSession, session } from '@/state/session'
 
@@ -35,7 +34,6 @@ watch(() => session.me?.user.id ?? null, (userId) => {
   <ErrorBoundary label="Signal Home">
     <ScenePreview v-if="wantsPreview" />
     <LoadingState v-else-if="session.status === 'loading' || (session.status === 'signedIn' && (home.status === 'idle' || home.status === 'loading'))" label="Opening the door…" />
-    <SetupRequired v-else-if="session.status === 'notConfigured'" :problems="session.problems" />
     <AuthScreen v-else-if="session.status === 'signedOut'" />
     <main v-else-if="home.status === 'error'" class="fail">
       <p role="alert">{{ home.error }}</p>

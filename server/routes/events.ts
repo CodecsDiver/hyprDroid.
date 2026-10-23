@@ -10,7 +10,6 @@ import type { ServerUser } from '../config'
 
 const RATE_LIMIT = 60
 const DAILY_XP_CAP = 40
-const DAY_MS = 86_400_000
 
 const DEFAULT_TTL_S: Partial<Record<EventKind, number>> = {
   mischief: 3600, listening_invite: 3600, heart_tap: 86_400, note_placed: 2_592_000, love_note: 2_592_000,

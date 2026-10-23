@@ -14,13 +14,14 @@
  ┌──────┴────────┐                                    ┌───────▼────────┐
  │ src/registry  │ id → behaviour (declarative)       │ src/data       │  api · sync hub · outbox · inbox · repos · files
  │ src/assets    │ manifest: GLB/clips/sfx/music/…    └───────┬────────┘
- └───────────────┘                                            │  same-origin fetch, HttpOnly session cookie
+ └───────────────┘                                            │  in-page "request" (never leaves the page)
                                                      ┌────────▼─────────────────────────────┐
                                                      │ server/  createApi(ctx): Request → Response │
-                                                     │ router · auth · routes · Store         │
-                                                     └───┬───────────┬───────────┬───────────┘
-                                          Netlify Function   Vite dev middleware   Node server / tests
-                                          (Netlify Blobs)    (./.data folder)      (folder / memory)
+                                                     │ router · rules · routes · Store        │
+                                                     └────────┬─────────────────────────────┘
+                                                     ┌────────▼─────────────────────────────┐
+                                                     │ src/local  LocalStore: memory ⇄ IndexedDB │
+                                                     └────────────────────────────────────────┘
 ```
 
 ## Layers and their rules
@@ -28,21 +29,22 @@
 - **`domain/`** — pure TypeScript. No Vue, no network, no clock except passed in. This is where behaviour that must be *right* lives
   (mood→environment priority, garden layout, event validation, sync maths, date-jar draw) and where most unit tests are.
   The event validators here are shared by the browser and the server, so both sides enforce the same rules.
-- **`data/`** — everything that talks to the server, plus the delivery machinery. `api.ts` is the only door (same-origin, cookie
-  session, anti-CSRF header). Repositories are thin typed wrappers. `sync.ts`, `outbox.ts` and `inbox.ts` are the multiplayer core.
+- **`data/`** — everything that talks to the backend, plus the delivery machinery. `api.ts` is the only door (an in-page call; the transport is swappable). Repositories are thin typed wrappers. `sync.ts`, `outbox.ts` and `inbox.ts` are the multiplayer core.
 - **`state/`** — small module-level reactive stores (`session`, `household`, `live`, `moods`, `notes`, `prefs`, `toasts`…). No Pinia.
 - **`scene/`** — Three.js only. It reports *which registry id was selected* and is driven by plain data. It never imports a feature.
 - **`features/`** — one folder per panel, lazy-loaded; each talks to `data/` through `useResource` (load + refresh when the partner changes
   something) and `useAction` (mutate, de-duplicate submits, friendly errors).
-- **`server/`** — a pure `Request → Response` function (`createApi`). Because it touches nothing but a `Store` interface and a clock,
-  the same code runs as a Netlify Function, inside `npm run dev`, as the standalone Node server, and directly in the tests.
+- **`server/`** — the app's rules as a pure `Request → Response` function (`createApi`). It touches nothing but a `Store` interface and a clock,
+  so it runs *inside the page* (src/local) and, unchanged, on Node in the tests. The few Node-only pieces it imports (`node:crypto`, `./crypto`)
+  are swapped for browser versions by aliases in `vite.config.ts`.
+- **`src/local/`** — starts the in-page backend: opens the browser store, wires `api.ts` to the handler, makes object URLs for stored files, and (private builds only) loads the baked-in originals on first run.
 
 ## The Store
 
 `server/store.ts` is a tiny key/value interface (`get`, `put`, `remove`, `list`, bytes) with two conditional writes:
 `ifNew` (create only if absent) and `ifMatch` (compare-and-set on an etag). Everything that must not happen twice or concurrently
 is built on those: idempotent events, the daily-capped bond XP, one-seed-per-day gardens, immutable Time Capsule items, the listening session.
-Implementations: `MemoryStore` (tests), `FileStore` (dev and standalone; atomic temp-file + rename), `NetlifyStore` (Netlify Blobs, strong consistency).
+Implementations: `MemoryStore` (tests), `LocalStore` (the browser: an in-memory map mirrored to IndexedDB, so reads and conditional writes stay synchronous and atomic), `FileStore` (`store-file.ts`, Node only; kept for tests/tools).
 
 ## Event lifecycle (Love Ping, hugs, spells, mischief, …)
 
@@ -63,9 +65,9 @@ Guarantees: **idempotent**, **ordered** (server timestamps), **expiring** (defau
 **consent-aware** (mischief refused unless the recipient opted in; re-checked on their device), **bounded** (60 events/minute/sender,
 payload size and shape limits).
 
-## "Live" without WebSockets
+## "Live" inside one page
 
-Netlify Functions cannot hold a socket open, so the app long-polls. `GET /api/sync?hold=6&v=<versions>` waits up to 6 seconds on the
+There is no network, so "live" means the page noticing its own changes. The sync hub still long-polls, but the poll is answered by the in-page handler. `GET /api/sync?hold=6&v=<versions>` waits up to 6 seconds on the
 server, checking about every 1.5 s, and returns the moment something is new for the caller: an unseen event, a change in any watched
 collection (each write bumps a version in `meta/versions`), or the partner's heart pulse. The first call returns immediately with
 everything. After any failure the client backs off and retries; the next successful call is a full catch-up. A hidden tab polls only
@@ -76,10 +78,10 @@ Durable content (notes, moods, plants, recipes, memories…) is ordinary stored 
 
 ## Files
 
-Uploads are chunked (3 MiB) because serverless request bodies are limited: `POST /files` → `PUT /files/:id/chunks/:n` →
-`POST /files/:id/complete`. Completion checks the size, sniffs the magic bytes against the declared type, and records a server-computed SHA-256.
-Reads are Range-aware, one chunk per response, so `<audio>` can seek and no response exceeds the function limit. Private vault files are
-visible to the partner only when shared; Time Capsule files are served as `application/octet-stream` + `attachment` with a sandboxing CSP.
+Uploads keep the same chunked protocol the handler always had (3 MiB pieces): `POST /files` → `PUT /files/:id/chunks/:n` →
+`POST /files/:id/complete`. Completion checks the size, sniffs the magic bytes against the declared type, and records a SHA-256 computed by the handler.
+Stored files are turned into object URLs at startup (and on upload) so `<img>` and `<audio>` can use them. Private vault files are
+visible to the other person only when shared; Time Capsule files can only be read back through the verified viewer.
 
 ## The 3D layer
 

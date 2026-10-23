@@ -6,7 +6,8 @@ import { home, myName, partnerName, updateSettings } from '@/state/household'
 import { canInstall, promptInstall } from '@/state/install'
 import { notificationsSupported, requestNotificationPermission } from '@/state/notifications'
 import { prefs } from '@/state/prefs'
-import { signOut } from '@/state/session'
+import { eraseEverything } from '@/local/backend'
+import { switchPerson } from '@/state/session'
 import { openPanel } from '@/state/ui'
 import { showToast } from '@/state/toasts'
 import { useAction } from '@/state/useAsync'
@@ -22,7 +23,10 @@ const save = useAction(async (changes: Partial<UserSettings>) => {
   await updateSettings(changes)
 })
 const leave = useAction(async () => {
-  if (window.confirm('Sign out of Signal Home on this device?')) await signOut()
+  await switchPerson()
+})
+const erase = useAction(async () => {
+  if (window.confirm('Erase everything Signal Home has stored in this browser, for both of you? This cannot be undone.')) await eraseEverything()
 })
 
 async function askNotifications(): Promise<void> {
@@ -47,13 +51,14 @@ const toggles: { key: keyof UserSettings; label: string }[] = [
     <div class="stack">
       <section class="stack" aria-labelledby="acct">
         <h3 id="acct">You</h3>
-        <p class="hint">Signed in as {{ myName }}. Your partner is {{ partnerName }}.</p>
-        <button type="button" class="btn btn--small btn--quiet" @click="leave.run()">Sign out</button>
+        <p class="hint">You are {{ myName }}. Your partner is {{ partnerName }}. Everything is kept only in this browser; nothing is sent anywhere.</p>
+        <button type="button" class="btn btn--small btn--quiet" @click="leave.run()">Switch person</button>
+        <button type="button" class="btn btn--small btn--danger" @click="erase.run()">Erase everything in this browser</button>
       </section>
 
       <section class="stack" aria-labelledby="notif">
         <h3 id="notif">Notifications</h3>
-        <p class="hint">Your choices are saved to your account and apply to every device you use. They only control what <em>you</em> are alerted about.</p>
+        <p class="hint">Your choices are kept in this browser. They only control what <em>you</em> are alerted about.</p>
         <label v-for="t in toggles" :key="t.key" class="switch">
           <input type="checkbox" :checked="home.settings[t.key] as boolean" :disabled="save.busy.value" @change="save.run({ [t.key]: ($event.target as HTMLInputElement).checked })" />
           <span>{{ t.label }}</span>

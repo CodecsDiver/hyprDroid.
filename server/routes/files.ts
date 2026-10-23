@@ -23,7 +23,7 @@ interface Upload {
   createdAt: string
 }
 
-const chunkKey = (id: string, n: number): string => `chunks/${id}/${String(n).padStart(4, '0')}`
+export const chunkKey = (id: string, n: number): string => `chunks/${id}/${String(n).padStart(4, '0')}`
 const chunkCount = (size: number): number => Math.ceil(size / CHUNK_SIZE)
 
 export async function getFile(ctx: Ctx, id: string): Promise<FileMeta | null> {

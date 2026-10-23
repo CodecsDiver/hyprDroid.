@@ -7,3 +7,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+declare module 'virtual:private-seed' {
+  import type { PrivateSeed } from '@/local/seed'
+  const seed: PrivateSeed | null
+  export default seed
+}

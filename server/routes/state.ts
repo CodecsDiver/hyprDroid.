@@ -5,7 +5,7 @@ import type { MoodSnapshot } from '../../src/domain/moods'
 import type { UserSettings } from '../../src/shared/types'
 import { ApiError } from '../http'
 import { bump, getValue, iso, isoDay, listValues, requireObject, update, uuidParam } from '../lib'
-import type { Ctx, Router } from '../router'
+import type { Router } from '../router'
 import { getSettings, unseenFor } from './events'
 
 function hour(value: unknown, field: string): number | null {

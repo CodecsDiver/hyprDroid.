@@ -1,73 +1,61 @@
 #!/usr/bin/env node
 /**
- * Post-build safety checks on ./dist. Fails the build if anything private or secret-shaped
- * would be published. Run by `npm run verify`.
+ * Post-build safety checks on ./dist (the PUBLIC build). Fails if anything private could be published.
  *
- *  1. No file in dist is byte-identical to anything in ./private (originals, sticker art, song).
- *  2. No audio files and no unexpected HTML pages are published.
- *  3. No password hashes, server secrets or admin tokens appear in any shipped file.
- *  4. The service worker, security headers and capsule viewer are present.
+ *  1. dist is exactly one file: index.html.
+ *  2. Nothing from ./private appears in it: no original app, sticker art, song or note text, not even re-encoded as base64.
+ *  3. It contains no audio/video data and makes no network calls to anything outside the page.
  */
-import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { extname, join, relative } from 'node:path'
+import { join } from 'node:path'
 
 const dist = 'dist'
-if (!existsSync(dist)) {
-  console.error('dist/ not found. Run `vite build` first.')
+const problems = []
+if (!existsSync(join(dist, 'index.html'))) {
+  console.error('dist/index.html not found. Run `vite build` first.')
   process.exit(1)
 }
 
-const walk = (dir) => readdirSync(dir).flatMap((name) => {
-  const path = join(dir, name)
-  return statSync(path).isDirectory() ? walk(path) : [path]
-})
-const files = walk(dist)
-const problems = []
-const sha = (bytes) => createHash('sha256').update(bytes).digest('hex')
+const files = readdirSync(dist)
+if (files.length !== 1 || files[0] !== 'index.html') problems.push(`dist must contain only index.html, found: ${files.join(', ')}`)
 
-// 1. Nothing private may be in dist, even renamed.
-const privateHashes = new Set()
-if (existsSync('private')) {
-  for (const file of walk('private')) privateHashes.add(sha(readFileSync(file)))
-}
-for (const file of files) {
-  if (privateHashes.has(sha(readFileSync(file)))) problems.push(`${relative(dist, file)} is identical to a file in ./private`)
-}
+const html = readFileSync(join(dist, 'index.html'), 'utf8')
+const size = statSync(join(dist, 'index.html')).size
 
-// 2. Allowed HTML and no media.
-const ALLOWED_HTML = new Set(['index.html', 'offline.html', 'capsule-viewer.html'])
-for (const file of files) {
-  const name = relative(dist, file)
-  const ext = extname(file).toLowerCase()
-  if (ext === '.html' && !ALLOWED_HTML.has(name)) problems.push(`unexpected HTML page in dist: ${name}`)
-  if (['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.mp4', '.webm'].includes(ext)) problems.push(`audio/video file shipped publicly: ${name}`)
-  if (statSync(file).size > 8 * 1024 * 1024) problems.push(`very large file (${Math.round(statSync(file).size / 1e6)} MB): ${name}`)
+// 2. Private content, in any encoding the build could plausibly have used.
+const privateDir = 'private'
+let compared = 0
+const probes = []
+for (const relative of ['time-capsule/signal-home.html', 'time-capsule/love-universe.html', 'assets/sticker-sheet.jpg', 'assets/room-song.mp3']) {
+  const path = join(privateDir, relative)
+  if (!existsSync(path)) continue
+  const bytes = readFileSync(path)
+  // Several windows of the file, so partial embedding is caught too.
+  for (const at of [0, Math.floor(bytes.length / 2), Math.max(0, bytes.length - 300)]) {
+    const window = bytes.subarray(at, at + 240)
+    // Base64 of a window depends on alignment; test all three.
+    for (let skew = 0; skew < 3; skew++) probes.push({ relative, text: bytes.subarray(at + skew, at + skew + 240).toString('base64').slice(4, 200) })
+  }
+  compared++
 }
+const notesPath = join(privateDir, 'seed/love-notes.json')
+if (existsSync(notesPath)) {
+  const notes = JSON.parse(readFileSync(notesPath, 'utf8'))
+  // Two generic lines are also the app's built-in fallback wording (src/domain/loveUniverse.ts), so they are expected.
+  const builtIn = readFileSync('src/domain/loveUniverse.ts', 'utf8')
+  for (const note of [...notes.love, ...notes.miss]) if (note.length > 20 && !builtIn.includes(note) && html.includes(note.slice(0, 40))) problems.push('a written note from ./private appears in dist/index.html')
+  compared++
+}
+for (const probe of probes) if (html.includes(probe.text)) problems.push(`content of private/${probe.relative} appears in dist/index.html`)
 
-// 3. Secret-shaped strings.
-const textLike = new Set(['.js', '.css', '.html', '.json', '.svg', '.webmanifest', '.map', '.txt'])
-for (const file of files.filter((f) => textLike.has(extname(f).toLowerCase()) || f.endsWith('_headers'))) {
-  const text = readFileSync(file, 'utf8')
-  if (/pbkdf2\$sha256\$/.test(text)) problems.push(`${relative(dist, file)} contains a password hash`)
-  if (/SIGNAL_(SESSION_SECRET|ADMIN_TOKEN)\s*[=:]\s*["']?[0-9a-f]{32,}/i.test(text)) problems.push(`${relative(dist, file)} contains a server secret`)
-  if (/dev-admin-token/.test(text)) problems.push(`${relative(dist, file)} contains the development admin token`)
-  if (/data:audio\/|data:video\//.test(text)) problems.push(`${relative(dist, file)} embeds audio/video as a data: URI`)
-}
-
-// 4. Required deliverables.
-for (const required of ['sw.js', 'manifest.webmanifest', '_headers', 'capsule-viewer.html', 'capsule-viewer.js', 'offline.html', 'icons/icon-192.png', 'icons/icon-512.png']) {
-  if (!existsSync(join(dist, required))) problems.push(`missing ${required}`)
-}
-const headers = existsSync(join(dist, '_headers')) ? readFileSync(join(dist, '_headers'), 'utf8') : ''
-const mainCsp = /^\/\*\n\s+Content-Security-Policy: (.*)$/m.exec(headers)?.[1] ?? ''
-if (!mainCsp) problems.push('no Content-Security-Policy for /*')
-if (/script-src[^;]*'unsafe-(inline|eval)'/.test(mainCsp)) problems.push("main CSP allows unsafe script execution")
-if (/https?:|wss?:/.test(/connect-src ([^;]*)/.exec(mainCsp)?.[1] ?? '')) problems.push('main CSP lets the app connect to a third-party origin')
+// 3. Media and network.
+if (/data:(audio|video)\//.test(html)) problems.push('index.html embeds audio/video as a data: URI')
+if (/\bfetch\(\s*["'`]https?:|new WebSocket\(|XMLHttpRequest/.test(html)) problems.push('index.html contains a network call')
+if (size > 8 * 1024 * 1024) problems.push(`the public build is unexpectedly large (${Math.round(size / 1e6)} MB): does it contain media?`)
 
 if (problems.length > 0) {
   console.error('dist verification FAILED:')
-  for (const problem of problems) console.error(`  ✗ ${problem}`)
+  for (const problem of [...new Set(problems)]) console.error(`  ✗ ${problem}`)
   process.exit(1)
 }
-console.log(`dist verification passed (${files.length} files checked${privateHashes.size ? `, compared against ${privateHashes.size} private files` : ', no ./private present to compare'}).`)
+console.log(`dist verification passed (1 file, ${(size / 1e6).toFixed(1)} MB${compared ? `, compared against ${compared} private sources` : ', no ./private present to compare'}).`)

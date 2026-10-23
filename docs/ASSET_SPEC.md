@@ -10,18 +10,18 @@ provided yet*: the app uses a procedural placeholder (3D) or a synthesised sound
 | Sound effects (16 ids) | **Synthesised** (ported from the originals); no samples supplied |
 | Mood loops (rain, gentle, sleep, reunion, cuddly) | **Not provided**: silent until you add files |
 | Textures, UI images | None (placeholder colours; ♥ glyph instead of a logo) |
-| Sticker art, room song, notes, originals | Real, **private** — loaded into your running app by `npm run assets:upload` |
+| Sticker art, room song, notes, originals | Real, **private** — baked into your private build by `npm run build:private` |
 
 ## Sources
 
 ```ts
 { kind: 'public',  path: '/assets/3d/house.glb' }                 // served from public/assets — only for art that is fine to be public
-{ kind: 'private', fileId: '<uuid from POST /api/files>' }       // private server file, served only to the two signed-in people
+{ kind: 'private', fileId: '<uuid of a file stored in the in-page backend>' }
 ```
 
-Private sources use a server file id. Upload through the API (`uploadFile` in `src/data/files.ts` shows the three calls); the file kinds
-restrict types (`music`: audio, `cover`/`sticker`: images). **GLB models are not an allowed file kind.** Ship the GLB as a `public` asset
-(the room geometry is not sensitive), or add a `model` kind to `server/routes/files.ts` (`FILE_RULES` and `server/sniff.ts`) first.
+Private sources use a stored file id (see `uploadFile` in `src/data/files.ts`). **GLB models are not an allowed file kind**: ship the GLB as a
+`public` asset next to the HTML file's source (the room geometry is not sensitive; note a single-file build inlines assets), or add a `model`
+kind to `server/routes/files.ts` (`FILE_RULES` and `server/sniff.ts`) first.
 
 ## 3D environment (Blender → GLB)
 

@@ -1,15 +1,14 @@
 import { reactive } from 'vue'
-import { setUnauthorizedHandler } from '@/data/api'
-import { toAppError } from '@/data/errors'
-import { fetchMe, fetchStatus, login, logout } from '@/data/repos/auth'
+import { fetchMe } from '@/data/repos/auth'
+import { PEOPLE, setPersona, startLocalBackend } from '@/local/backend'
+import privateSeed from 'virtual:private-seed'
 import type { Me } from '@/shared/types'
 
 export const session = reactive<{
-  status: 'loading' | 'signedOut' | 'signedIn' | 'notConfigured'
+  status: 'loading' | 'signedOut' | 'signedIn'
   me: Me | null
   userId: string | null
-  problems: string[]
-}>({ status: 'loading', me: null, userId: null, problems: [] })
+}>({ status: 'loading', me: null, userId: null })
 
 function apply(me: Me | null): void {
   session.me = me
@@ -17,36 +16,19 @@ function apply(me: Me | null): void {
   session.status = me ? 'signedIn' : 'signedOut'
 }
 
-/** Asks the server who I am. The session lives in an HttpOnly cookie, so there is nothing to restore client-side. */
+/** Opens this browser's own copy of the data. There is no sign-in: the first screen just asks who is here. */
 export async function initSession(): Promise<void> {
-  setUnauthorizedHandler(() => {
-    if (session.status === 'signedIn') apply(null)
-  })
-  try {
-    const status = await fetchStatus()
-    if (!status.configured) {
-      session.problems = status.problems ?? []
-      session.status = 'notConfigured'
-      return
-    }
-    apply(await fetchMe())
-  } catch (error) {
-    const app = toAppError(error)
-    if (app.code === 'server_not_configured') {
-      session.status = 'notConfigured'
-      return
-    }
-    if (app.code === 'not_authenticated') return apply(null)
-    // Offline or the server is unreachable: show the sign-in screen rather than an endless spinner.
-    apply(null)
-  }
+  await startLocalBackend(privateSeed)
+  apply(null)
 }
 
-export async function signInWithPassword(username: string, password: string): Promise<void> {
-  apply(await login(username.trim(), password))
+export async function chooseWhoIsHere(id: (typeof PEOPLE)[number]['id']): Promise<void> {
+  await setPersona(id)
+  apply(await fetchMe())
 }
 
-export async function signOut(): Promise<void> {
-  await logout()
+/** Hands the page over to the other person. */
+export async function switchPerson(): Promise<void> {
+  await setPersona(null)
   apply(null)
 }

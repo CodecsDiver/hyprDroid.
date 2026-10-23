@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { buildLoadMessage, isViewerReady, sandboxIsSafe, sha256Hex, VIEWER_SANDBOX, verifyArchive } from '@/capsule/integrity'
@@ -10,40 +10,29 @@ import type { LoveEvent } from '@/domain/events'
 import { relativeTime } from '@/domain/time'
 
 const root = join(import.meta.dirname, '..', '..')
-describe('HTTP security headers', () => {
-  const headers = readFileSync(join(root, 'public', '_headers'), 'utf8')
-  const block = (pattern: string): string => {
-    const start = headers.indexOf(`\n${pattern}\n`)
-    expect(start, `rule for ${pattern}`).toBeGreaterThanOrEqual(0)
-    const rest = headers.slice(start + pattern.length + 2)
-    return rest.slice(0, rest.search(/\n\S/) === -1 ? undefined : rest.search(/\n\S/))
-  }
-  const csp = (text: string): string => /Content-Security-Policy: (.*)/.exec(text)?.[1] ?? ''
+describe('the app stays inside the page', () => {
+  const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]))
+  const sources = walk(join(root, 'src')).filter((file) => /\.(ts|vue|js)$/.test(file))
 
-  it('the app policy allows no inline or eval script, no framing and no plugins', () => {
-    const policy = csp(block('/*'))
-    expect(policy).toMatch(/script-src 'self'(;|$)/)
-    expect(policy).not.toMatch(/unsafe-eval/)
-    expect(policy).not.toMatch(/script-src[^;]*unsafe-inline/)
-    expect(policy).toMatch(/frame-ancestors 'none'/)
-    expect(policy).toMatch(/object-src 'none'/)
-    expect(policy).toMatch(/base-uri 'none'/)
-    expect(policy).toMatch(/default-src 'self'/)
+  it('makes no network requests of any kind', () => {
+    for (const file of sources) {
+      const text = readFileSync(file, 'utf8')
+      expect(/\bfetch\(|XMLHttpRequest|new WebSocket|EventSource|sendBeacon|importScripts/.test(text), `${file} talks to the network`).toBe(false)
+    }
   })
 
-  it('the app may only talk to its own origin', () => {
-    const policy = csp(block('/*'))
-    expect(policy).toMatch(/connect-src 'self'(;|$)/)
-    expect(policy).toMatch(/img-src 'self' data: blob:(;|$)/)
-    expect(policy).toMatch(/media-src 'self' blob:(;|$)/)
-    expect(policy).not.toMatch(/https?:\/\//)
+  it('does not identify or remember devices', () => {
+    for (const file of sources) {
+      const text = readFileSync(file, 'utf8')
+      expect(/userAgent|navigator\.platform|navigator\.plugins|deviceId|device_id|canvas\.toDataURL|document\.cookie|getBattery|enumerateDevices/.test(text), `${file} touches something that identifies a device`).toBe(false)
+    }
   })
 
-  it('only the capsule viewer gets the relaxed policy', () => {
-    const viewer = csp(block('/capsule-viewer.html'))
-    expect(viewer).toMatch(/default-src 'none'/)
-    expect(viewer).toMatch(/unsafe-inline/)
-    expect(csp(block('/*'))).not.toMatch(/unpkg/)
+  it('has no external URLs in the app code', () => {
+    for (const file of sources.filter((f) => !f.endsWith('viewer.js'))) {
+      const text = readFileSync(file, 'utf8').replace(/http:\/\/signal-home\.local/g, '').replace(/https?:\/\/(www\.)?(w3\.org|github\.com)[^\s'"`]*/g, '')
+      expect(/https?:\/\//.test(text), `${file} mentions an external address`).toBe(false)
+    }
   })
 })
 
@@ -79,7 +68,7 @@ describe('Time Capsule integrity and sandbox', () => {
   })
 
   it('the viewer page checks the sender and never ships the app origin', () => {
-    const viewer = readFileSync(join(root, 'public', 'capsule-viewer.js'), 'utf8')
+    const viewer = readFileSync(join(root, 'src', 'capsule', 'viewer.js'), 'utf8')
     expect(viewer).toMatch(/event\.source !== window\.parent/)
     expect(viewer).toMatch(/setAttribute\('sandbox', 'allow-scripts'\)/)
     expect(viewer).not.toMatch(/allow-same-origin/)

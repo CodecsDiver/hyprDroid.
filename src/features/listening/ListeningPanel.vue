@@ -171,8 +171,8 @@ const playList = (list: Playlist): void => {
           <li v-for="track in tracks.data.value" :key="track.id" class="card track" :class="{ 'track--now': track.id === player.currentId.value }">
             <img v-if="coverUrls[track.id]" class="cover cover--small" :src="coverUrls[track.id]" alt="" width="44" height="44" />
             <div v-else class="cover cover--small cover--empty" aria-hidden="true">♪</div>
-            <button type="button" class="track__play grow" :aria-label="`Play ${track.title}${track.artist ? ' by ' + track.artist : ''}`" @click="player.playTrack(track.id, tracks.data.value.map((t) => t.id))">
-              <span class="track__title">{{ track.title }}</span><span class="hint">{{ track.artist }} {{ track.durationMs ? '· ' + formatDuration(track.durationMs) : '' }}</span>
+            <button type="button" class="track__play grow" @click="player.playTrack(track.id, tracks.data.value.map((t) => t.id))">
+              <span class="visually-hidden">Play </span><span class="track__title">{{ track.title }}</span><span class="hint">{{ track.artist }} {{ track.durationMs ? '· ' + formatDuration(track.durationMs) : '' }}</span>
             </button>
             <button v-if="track.ownerId === me" type="button" class="btn btn--small btn--quiet" :aria-label="`Remove ${track.title}`" @click="removeTrack.run(track)">🗑</button>
           </li>

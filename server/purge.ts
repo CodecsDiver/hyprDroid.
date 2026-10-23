@@ -3,7 +3,7 @@ import type { Store } from './store'
 
 const DAY = 86_400_000
 
-/** Housekeeping: expired events (and their idempotency records) and abandoned uploads. Hourly on Netlify. */
+/** Housekeeping: expired events (and their idempotency records) and abandoned uploads. Run once when the page opens. */
 export async function purgeExpired(store: Store, now: number): Promise<{ events: number; uploads: number }> {
   let events = 0
   let uploads = 0
