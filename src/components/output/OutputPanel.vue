@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { isNativeRuntime } from '../../backend/backend'
+import { onWebPythonStatus, type WebPythonStatus } from '../../runtime/webPython'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 
 type Tone = 'normal' | 'dim' | 'error' | 'warn'
@@ -11,6 +13,15 @@ interface Segment {
 const RESULT_MARKER = '@@PYDISC'
 
 const workspace = useWorkspaceStore()
+const webStatus = ref<WebPythonStatus>('idle')
+const webFailure = ref('')
+const stopWebStatus = isNativeRuntime()
+  ? undefined
+  : onWebPythonStatus((status, failure) => {
+      webStatus.value = status
+      webFailure.value = failure
+    })
+onBeforeUnmount(() => stopWebStatus?.())
 
 const isolationChip = computed(() => {
   const view = workspace.output
@@ -39,6 +50,12 @@ const segments = computed<Segment[]>(() => {
   const view = workspace.output
   switch (view.kind) {
     case 'empty':
+      if (webStatus.value === 'failed') {
+        return [{ text: `Python could not start in this browser: ${webFailure.value}\nUse the red chip at the top to retry, or use a current Chrome/Edge/Firefox (114+).`, tone: 'error' }]
+      }
+      if (webStatus.value === 'booting') {
+        return [{ text: 'Loading Python (first time downloads about 10 MB, then it is cached)...', tone: 'dim' }]
+      }
       return [{ text: 'Write code, then Run it or press Check my work. Nothing executes until you do.', tone: 'dim' }]
     case 'error':
       return [{ text: `[${view.error.code}] ${view.error.message}`, tone: 'error' }]

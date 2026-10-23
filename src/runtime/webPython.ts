@@ -9,18 +9,19 @@ let isReady = false
 let requestCounter = 0
 let bootPromise: Promise<void> | undefined
 
-export type WebPythonStatus = 'idle' | 'booting' | 'ready'
+export type WebPythonStatus = 'idle' | 'booting' | 'ready' | 'failed'
 let status: WebPythonStatus = 'idle'
-const statusListeners = new Set<(status: WebPythonStatus) => void>()
+let failureMessage = ''
+const statusListeners = new Set<(status: WebPythonStatus, failureMessage: string) => void>()
 
 function setStatus(next: WebPythonStatus): void {
   status = next
-  statusListeners.forEach((listener) => listener(next))
+  statusListeners.forEach((listener) => listener(next, failureMessage))
 }
 
-export function onWebPythonStatus(listener: (status: WebPythonStatus) => void): () => void {
+export function onWebPythonStatus(listener: (status: WebPythonStatus, failureMessage: string) => void): () => void {
   statusListeners.add(listener)
-  listener(status)
+  listener(status, failureMessage)
   return () => {
     statusListeners.delete(listener)
   }
@@ -41,9 +42,18 @@ function send<TResponse extends WorkerResponse>(request: WorkerRequest, timeoutM
       if (event.data.id !== request.id) return
       clearTimeout(timer)
       current.removeEventListener('message', onMessage)
+      current.removeEventListener('error', onError)
       resolve(event.data as TResponse)
     }
+    // A worker that cannot even load (for example no module-worker support) never replies.
+    function onError(event: ErrorEvent): void {
+      clearTimeout(timer)
+      current.removeEventListener('message', onMessage)
+      current.removeEventListener('error', onError)
+      reject(new Error(event.message || 'the Python worker failed to load (this browser may not support module workers)'))
+    }
     current.addEventListener('message', onMessage)
+    current.addEventListener('error', onError)
     current.postMessage(request)
   })
 }
@@ -60,8 +70,16 @@ function discardWorker(): void {
 export function bootWebPython(): Promise<void> {
   if (isReady) return Promise.resolve()
   if (bootPromise) return bootPromise
+  failureMessage = ''
   setStatus('booting')
-  worker = new Worker(new URL('./pythonWorker.ts', import.meta.url), { type: 'module' })
+  try {
+    worker = new Worker(new URL('./pythonWorker.ts', import.meta.url), { type: 'module' })
+  } catch (error) {
+    // Browsers without module-worker support throw here instead of firing an error event.
+    failureMessage = `module workers are not supported (${error instanceof Error ? error.message : String(error)})`
+    setStatus('failed')
+    return Promise.reject(new Error(failureMessage))
+  }
   bootPromise = send({ id: ++requestCounter, kind: 'init', pyodideBaseUrl: pyodideBaseUrl() }, BOOT_TIMEOUT_MS)
     .then((response) => {
       if (!response.ok) throw new Error(response.message)
@@ -70,6 +88,8 @@ export function bootWebPython(): Promise<void> {
     })
     .catch((error) => {
       discardWorker()
+      failureMessage = error instanceof Error ? error.message : String(error)
+      setStatus('failed')
       throw error
     })
   return bootPromise

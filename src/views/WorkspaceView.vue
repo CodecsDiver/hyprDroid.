@@ -25,6 +25,7 @@ const progression = useProgressionStore()
 const workspace = useWorkspaceStore()
 
 const webPythonStatus = ref<WebPythonStatus>('idle')
+const webPythonFailure = ref('')
 let stopWebPythonStatus: (() => void) | undefined
 let stopSound: (() => void) | undefined
 let stopLessonSubscription: (() => void) | undefined
@@ -54,7 +55,10 @@ onMounted(async () => {
     progression.record({ type: 'lesson_studied', lessonId })
   })
   if (!isNativeRuntime()) {
-    stopWebPythonStatus = onWebPythonStatus((status) => (webPythonStatus.value = status))
+    stopWebPythonStatus = onWebPythonStatus((status, failure) => {
+      webPythonStatus.value = status
+      webPythonFailure.value = failure
+    })
     // Pre-warm so the first Run does not wait for the WebAssembly download; failures surface on first Run.
     bootWebPython().catch(() => undefined)
     void navigator.storage?.persist?.()
@@ -77,9 +81,15 @@ onBeforeUnmount(() => {
   <div class="workspace" :class="{ focus: settings.focusMode }">
     <div class="realm-backdrop" />
     <TitleBar title="Python Discovery" subtitle="// no autocomplete. you write every line.">
-      <span v-if="!isNativeRuntime()" class="chip" :class="webPythonStatus === 'ready' ? 'ok' : 'warn'" title="Python runs in WebAssembly inside this page. Files are kept in this browser's storage.">
-        {{ webPythonStatus === 'ready' ? 'WEB PYTHON READY' : webPythonStatus === 'booting' ? 'BOOTING PYTHON...' : 'WEB PYTHON (loads on first run)' }}
-      </span>
+      <button
+        v-if="!isNativeRuntime()"
+        class="chip chip-button"
+        :class="webPythonStatus === 'ready' ? 'ok' : webPythonStatus === 'failed' ? 'bad' : 'warn'"
+        :title="webPythonStatus === 'failed' ? `${webPythonFailure} (click to retry)` : 'Python runs in WebAssembly inside this page. Files are kept in this browser\'s storage.'"
+        @click="webPythonStatus === 'failed' && bootWebPython().catch(() => undefined)"
+      >
+        {{ webPythonStatus === 'ready' ? 'WEB PYTHON READY' : webPythonStatus === 'booting' ? 'BOOTING PYTHON...' : webPythonStatus === 'failed' ? 'PYTHON FAILED - RETRY' : 'WEB PYTHON (loads on first run)' }}
+      </button>
       <span v-else-if="workspace.sandbox && !workspace.sandbox.bubblewrapUsable" class="chip warn" title="sudo apt install bubblewrap">NO SANDBOX</span>
       <span v-else-if="workspace.sandbox" class="chip ok">SANDBOX ARMED</span>
       <span v-if="workspace.sandbox && !workspace.sandbox.pythonPath" class="chip bad">PYTHON 3 NOT FOUND</span>
@@ -140,4 +150,6 @@ onBeforeUnmount(() => {
 .chip.ok { color: var(--neon-green); border-color: var(--neon-green); }
 .chip.warn { color: var(--neon-amber); border-color: var(--neon-amber); }
 .chip.bad { color: var(--neon-red); border-color: var(--neon-red); }
+.chip-button { background: transparent; font-family: inherit; cursor: default; }
+.chip-button.bad { cursor: pointer; }
 </style>
