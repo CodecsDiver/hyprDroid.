@@ -1,0 +1,107 @@
+/*
+ * Design tokens. Every colour, space, radius, shadow, duration and layer used
+ * by the UI is defined here; components reference tokens, never literals.
+ */
+:root {
+  /* Palette (carried over from the original Signal Home / Love Universe) */
+  --color-night-950: #080008;
+  --color-night-900: #210019;
+  --color-night-800: #3a0a2c;
+  --color-plum-700: #55003f;
+  --color-ink: #fff6df;
+  --color-ink-muted: #d9c4d5;
+  --color-ink-faint: rgba(255, 246, 223, 0.62);
+  --color-gold: #ffd98d;
+  --color-gold-strong: #ffe8a3;
+  --color-rose: #ff7aaa;
+  --color-rose-soft: #ffd8e8;
+  --color-lilac: #d8d2ff;
+  --color-mint: #aef3c3;
+  --color-danger: #ff8a8a;
+  --color-spell: #c9a7ff;
+  --color-spell-deep: #1c1033;
+
+  --surface-glass: rgba(255, 255, 255, 0.08);
+  --surface-glass-strong: rgba(255, 255, 255, 0.14);
+  --surface-panel: rgba(18, 0, 20, 0.9);
+  --surface-scrim: rgba(0, 0, 0, 0.6);
+  --line-soft: rgba(255, 255, 255, 0.14);
+  --line-gold: rgba(255, 217, 141, 0.45);
+  --focus-ring: 0 0 0 3px var(--color-night-900), 0 0 0 5px var(--color-gold);
+
+  /* Type */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Trebuchet MS', var(--font-body);
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --leading-tight: 1.15;
+  --leading-body: 1.5;
+
+  /* Space & shape */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-pill: 999px;
+  --tap-target: 48px;
+  --gutter: max(var(--space-4), env(safe-area-inset-left, 0px));
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Elevation */
+  --shadow-float: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.55);
+  --glow-gold: 0 0 24px rgba(255, 217, 141, 0.35);
+
+  /* Layers */
+  --layer-scene: 1;
+  --layer-hud: 30;
+  --layer-panel: 40;
+  --layer-effects: 45; /* above panels: a ping that arrives while a panel is open must still show */
+  --layer-modal: 50;
+  --layer-toast: 60;
+  --layer-panic: 70;
+
+  /* Motion */
+  --motion-fast: 140ms;
+  --motion-base: 260ms;
+  --motion-slow: 520ms;
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.25, 1.25);
+}
+
+/* Reduced motion: honoured from the OS, or forced on/off from Settings via <html data-motion>. */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motion='auto'] {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}
+:root[data-motion='reduced'] {
+  --motion-fast: 0ms;
+  --motion-base: 0ms;
+  --motion-slow: 0ms;
+}
+
+/* Vee's Spell Table gets its own palette without touching component CSS. */
+.theme-spell {
+  --color-gold: var(--color-spell);
+  --line-gold: rgba(201, 167, 255, 0.5);
+  --surface-panel: rgba(20, 8, 40, 0.92);
+  --focus-ring: 0 0 0 3px var(--color-spell-deep), 0 0 0 5px var(--color-spell);
+}

@@ -1,0 +1,18 @@
+/* Room-wide mischief effects. Applied via <html data-room-fx="…"> by EffectsLayer; always cancellable. */
+[data-room-fx='shake_room'] #app { animation: room-shake 0.45s linear infinite; }
+[data-room-fx='flip_room'] #app { transition: transform 0.5s var(--ease-out); transform: rotate(180deg); }
+[data-room-fx='invert_colors'] #app { filter: invert(1) hue-rotate(180deg); }
+[data-room-fx='fake_glitch'] #app { animation: room-glitch 0.35s steps(2) infinite; }
+
+@keyframes room-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-6px, 2px) rotate(-0.6deg); }
+  40% { transform: translate(5px, -3px) rotate(0.6deg); }
+  60% { transform: translate(-4px, 3px) rotate(-0.4deg); }
+  80% { transform: translate(4px, -2px) rotate(0.4deg); }
+}
+@keyframes room-glitch {
+  0% { transform: translate(0); filter: hue-rotate(0); clip-path: inset(0 0 0 0); }
+  50% { transform: translate(-4px, 1px); filter: hue-rotate(90deg) saturate(2); clip-path: inset(10% 0 40% 0); }
+  100% { transform: translate(3px, -1px); filter: hue-rotate(-60deg); clip-path: inset(0 0 0 0); }
+}
