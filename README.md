@@ -16,6 +16,17 @@ Tauri 2 (Rust) + Vue 3 + TypeScript + Monaco.
 - **Lesson Lab**: a separate window with seven interactive visualizers (sorting x5, binary search, BFS/DFS pathfinding, recursion tree, stacks and queues, linked lists, Big-O growth). Finishing a visualizer earns XP in the main window.
 - **Settings**: animation intensity (off/low/medium/high), sound, screen shake, focus mode (dims side panels).
 
+## Install as a PWA
+
+The same app runs in any modern browser and installs as a standalone app (Chrome/Edge: install icon in the address bar; Firefox/Safari: add to home screen/dock). After the first visit it works fully offline.
+
+```
+pnpm build:web       # outputs dist-web/ (app, manifest, service worker, bundled Pyodide ~17 MB)
+pnpm preview:web     # serves it on http://localhost:4173
+```
+
+Host `dist-web/` on any static server. Service workers need HTTPS (or localhost), and `.wasm` must be served as `application/wasm`. In the PWA, Python runs as WebAssembly (Pyodide) in a Web Worker: no network, 10 s limit (the worker is terminated on timeout), output capped at 64 KB. Files and progress are stored in the browser (localStorage), so clearing site data erases them; the desktop app keeps everything on disk.
+
 ## Develop
 
 ```
@@ -26,13 +37,14 @@ pnpm tauri dev     # desktop app
 pnpm tauri build --bundles deb
 ```
 
-Linux Mint / Ubuntu build dependencies: `libwebkit2gtk-4.1-dev build-essential libssl-dev librsvg2-dev libayatana-appindicator3-dev`. Runtime: `python3`, recommended `bubblewrap`.
+`pnpm dev` alone (browser) uses the same web runtime as the PWA.
 
-`pnpm dev` alone opens a browser preview: progress and files use browser storage, and running Python is deliberately unavailable there.
+Linux Mint / Ubuntu build dependencies: `libwebkit2gtk-4.1-dev build-essential libssl-dev librsvg2-dev libayatana-appindicator3-dev`. Runtime: `python3`, recommended `bubblewrap`.
 
 ## Safety model
 
 - Nothing executes until you press Run or Check my work.
+- PWA: Python runs in WebAssembly with the network APIs removed from its worker. As in the desktop app, this is not a security boundary against a determined student.
 - With bubblewrap: no network, read-only system, only the project directory writable, 10 s wall-clock limit, output capped at 64 KB, CPU/file-size/memory limits.
 - Without bubblewrap: you must explicitly approve each unsandboxed run, and the output panel labels it.
 - Objective results come back as a nonce-tagged line. This protects against accidents, not a student deliberately forging their own XP: this is not a security boundary.

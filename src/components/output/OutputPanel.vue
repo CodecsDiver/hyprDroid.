@@ -15,9 +15,14 @@ const workspace = useWorkspaceStore()
 const isolationChip = computed(() => {
   const view = workspace.output
   if (view.kind !== 'run' && view.kind !== 'check') return null
-  return view.outcome.isolation === 'bubblewrap'
-    ? { text: 'SANDBOXED (bubblewrap)', tone: 'ok' }
-    : { text: 'UNSANDBOXED - full user access', tone: 'warn' }
+  switch (view.outcome.isolation) {
+    case 'bubblewrap':
+      return { text: 'SANDBOXED (bubblewrap)', tone: 'ok' }
+    case 'wasm':
+      return { text: 'SANDBOXED (WebAssembly, no network)', tone: 'ok' }
+    default:
+      return { text: 'UNSANDBOXED - full user access', tone: 'warn' }
+  }
 })
 
 const statusChip = computed(() => {

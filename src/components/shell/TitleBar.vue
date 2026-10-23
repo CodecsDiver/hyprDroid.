@@ -21,7 +21,7 @@ const close = () => withWindow((w) => w.close())
       <span v-if="subtitle" class="brand-subtitle">{{ subtitle }}</span>
     </div>
     <div class="titlebar-slot"><slot /></div>
-    <div class="window-controls">
+    <div v-if="isNativeRuntime()" class="window-controls">
       <button class="control" title="Minimize" @click="minimize">&#8211;</button>
       <button class="control" title="Maximize" @click="toggleMaximize">&#9633;</button>
       <button class="control control-close" title="Close" @click="close">&#10005;</button>
@@ -54,6 +54,7 @@ const close = () => withWindow((w) => w.close())
 .brand-subtitle { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; }
 .titlebar-slot { flex: 1; display: flex; justify-content: center; align-items: center; gap: 10px; }
 .window-controls { display: flex; height: 100%; }
+.titlebar:not(:has(.window-controls)) { padding-right: 14px; }
 .control {
   width: 46px;
   border: 0;

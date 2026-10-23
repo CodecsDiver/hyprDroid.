@@ -43,7 +43,8 @@ if __name__ == "__main__":
     _result = _Result()
     _unittest.defaultTestLoader.loadTestsFromModule(_sys.modules["__main__"]).run(_result)
     _sys.stdout.flush()
-    _sys.__stdout__.write("\\n@@PYDISC:" + _NONCE + "@@" + _json.dumps(_result.rows) + "\\n")
+    _out = _sys.stdout if _sys.platform == "emscripten" else _sys.__stdout__
+    _out.write("\\n@@PYDISC:" + _NONCE + "@@" + _json.dumps(_result.rows) + "\\n")
 `
 
 export function buildCheckSource(project: Project): string {

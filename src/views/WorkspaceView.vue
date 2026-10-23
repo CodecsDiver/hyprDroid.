@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { isNativeRuntime, openLessonsWindow } from '../backend/backend'
 import { subscribeLessonStudied } from '../backend/crossWindow'
 import BannerLayer from '../components/juice/BannerLayer.vue'
@@ -14,6 +14,7 @@ import DebriefPanel from '../components/profile/DebriefPanel.vue'
 import ConsentModal from '../components/shell/ConsentModal.vue'
 import SettingsMenu from '../components/shell/SettingsMenu.vue'
 import TitleBar from '../components/shell/TitleBar.vue'
+import { onWebPythonStatus, bootWebPython, type WebPythonStatus } from '../runtime/webPython'
 import { startSoundEngine } from '../juice/sound'
 import { useProgressionStore } from '../stores/progressionStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -23,6 +24,8 @@ const settings = useSettingsStore()
 const progression = useProgressionStore()
 const workspace = useWorkspaceStore()
 
+const webPythonStatus = ref<WebPythonStatus>('idle')
+let stopWebPythonStatus: (() => void) | undefined
 let stopSound: (() => void) | undefined
 let stopLessonSubscription: (() => void) | undefined
 
@@ -50,6 +53,12 @@ onMounted(async () => {
   stopLessonSubscription = await subscribeLessonStudied((lessonId) => {
     progression.record({ type: 'lesson_studied', lessonId })
   })
+  if (!isNativeRuntime()) {
+    stopWebPythonStatus = onWebPythonStatus((status) => (webPythonStatus.value = status))
+    // Pre-warm so the first Run does not wait for the WebAssembly download; failures surface on first Run.
+    bootWebPython().catch(() => undefined)
+    void navigator.storage?.persist?.()
+  }
   await workspace.initialize()
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('blur', saveWhenLeaving)
@@ -57,6 +66,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopSound?.()
+  stopWebPythonStatus?.()
   stopLessonSubscription?.()
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('blur', saveWhenLeaving)
@@ -67,7 +77,9 @@ onBeforeUnmount(() => {
   <div class="workspace" :class="{ focus: settings.focusMode }">
     <div class="realm-backdrop" />
     <TitleBar title="Python Discovery" subtitle="// no autocomplete. you write every line.">
-      <span v-if="!isNativeRuntime()" class="chip warn" title="Saving works in browser storage; running Python needs the desktop app.">BROWSER PREVIEW</span>
+      <span v-if="!isNativeRuntime()" class="chip" :class="webPythonStatus === 'ready' ? 'ok' : 'warn'" title="Python runs in WebAssembly inside this page. Files are kept in this browser's storage.">
+        {{ webPythonStatus === 'ready' ? 'WEB PYTHON READY' : webPythonStatus === 'booting' ? 'BOOTING PYTHON...' : 'WEB PYTHON (loads on first run)' }}
+      </span>
       <span v-else-if="workspace.sandbox && !workspace.sandbox.bubblewrapUsable" class="chip warn" title="sudo apt install bubblewrap">NO SANDBOX</span>
       <span v-else-if="workspace.sandbox" class="chip ok">SANDBOX ARMED</span>
       <span v-if="workspace.sandbox && !workspace.sandbox.pythonPath" class="chip bad">PYTHON 3 NOT FOUND</span>
