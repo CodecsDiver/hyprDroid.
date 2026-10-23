@@ -120,6 +120,8 @@ export function createStub({ origin, capsuleFiles = {}, tamperCapsule = false })
       if (request.method() === 'DELETE') return route.fulfill({ status: 204, headers: cors })
     }
 
+    if (pathname === '/realtime/v1/api/broadcast') return route.fulfill({ status: 202, headers: cors })
+
     const sign = /^\/storage\/v1\/object\/sign\/([^/]+)\/(.+)$/.exec(pathname)
     if (sign) return json(route, { signedURL: `/object/sign/${sign[1]}/${sign[2]}?token=t` })
     const download = /^\/storage\/v1\/object\/(?:authenticated\/)?(time-capsule)\/(.+)$/.exec(pathname)

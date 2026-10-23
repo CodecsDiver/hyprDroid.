@@ -53,10 +53,10 @@ function legs(parent: Object3D, color: number, x: number, z: number, height: num
 export function buildRoomShell(): Group {
   const shell = new Group()
   shell.name = 'room_shell'
-  part(shell, box(ROOM.width, 0.12, ROOM.depth), 0x5a3428, [0, -0.06, 0])
-  part(shell, box(ROOM.width, ROOM.height, 0.12), 0x5a243e, [0, ROOM.height / 2, -ROOM.depth / 2 - 0.06])
-  part(shell, box(0.12, ROOM.height, ROOM.depth), 0x47233a, [-ROOM.width / 2 - 0.06, ROOM.height / 2, 0])
-  part(shell, box(1.8, 0.01, 1.3), 0x7a3a58, [0.2, 0.01, 0.1]) // rug
+  part(shell, box(ROOM.width, 0.12, ROOM.depth), 0x5a3428, [0, -0.06, 0], { name: 'floor' })
+  part(shell, box(ROOM.width, ROOM.height, 0.12), 0x5a243e, [0, ROOM.height / 2, -ROOM.depth / 2 - 0.06], { name: 'wall_back' })
+  part(shell, box(0.12, ROOM.height, ROOM.depth), 0x47233a, [-ROOM.width / 2 - 0.06, ROOM.height / 2, 0], { name: 'wall_left' })
+  part(shell, box(1.8, 0.01, 1.3), 0x7a3a58, [0.2, 0.01, 0.1], { name: 'rug' })
   return shell
 }
 

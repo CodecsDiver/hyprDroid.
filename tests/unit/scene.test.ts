@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_MANIFEST, createAssetResolver, type AssetManifest } from '@/assets/manifest'
 import { CameraRig } from '@/scene/cameraRig'
 import { HighlightController } from '@/scene/highlight'
-import { buildHouse } from '@/scene/loader'
+import { applyTextureOverrides, buildHouse } from '@/scene/loader'
 import { attachHitProxy, collectInteractiveRoots, interactionIdOf, matchObjectId, pickInteraction } from '@/scene/picking'
 import { buildPlaceholderHouse, hasPlaceholderFor } from '@/scene/placeholders'
 import { INTERACTIONS, INTERACTION_IDS } from '@/registry/interactionRegistry'
@@ -42,6 +42,28 @@ describe('placeholder scene honours the registry contract', () => {
   it('does not leave unselectable objects: every root gets a hit proxy', async () => {
     const build = await buildHouse(DEFAULT_MANIFEST, resolver)
     for (const root of build.roots.values()) expect(root.children.some((c) => c.userData.hitProxy)).toBe(true)
+  })
+})
+
+describe('manifest texture overrides', () => {
+  it('names the placeholder shell meshes so textures can target them', async () => {
+    const build = await buildHouse(DEFAULT_MANIFEST, resolver)
+    for (const name of ['floor', 'wall_back', 'wall_left', 'rug']) expect(build.root.getObjectByName(name), name).toBeTruthy()
+  })
+
+  it('reports a missing target or a failing texture instead of throwing', async () => {
+    const build = await buildHouse(DEFAULT_MANIFEST, resolver)
+    const warnings: string[] = []
+    const manifest: AssetManifest = {
+      ...DEFAULT_MANIFEST,
+      textures: {
+        nope: { source: { kind: 'public', path: '/assets/tex/nope.png' }, colorSpace: 'srgb' },
+        floor: { source: { kind: 'public', path: '/assets/tex/floor.png' }, colorSpace: 'srgb' },
+      },
+    }
+    await applyTextureOverrides(build.root, manifest, resolver, warnings)
+    expect(warnings.some((w) => w.includes('"nope"'))).toBe(true)
+    expect(warnings.some((w) => w.includes('"floor" failed'))).toBe(true)
   })
 })
 

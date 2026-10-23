@@ -65,8 +65,11 @@ export class RealtimeHub {
     this.setStatus('idle')
   }
 
+  /** Ephemeral "I'm here" pulse. Skipped (never queued, never sent over REST) unless the live channel is joined. */
   async broadcastHeart(): Promise<void> {
-    await this.presenceChannel?.send({ type: 'broadcast', event: 'heart', payload: { from: this.o.userId } })
+    const channel = this.presenceChannel
+    if (channel?.state !== 'joined') return
+    await channel.send({ type: 'broadcast', event: 'heart', payload: { from: this.o.userId } })
   }
 
   private connect(): void {

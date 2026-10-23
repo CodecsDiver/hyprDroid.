@@ -6,6 +6,7 @@ import ToastHost from '@/components/ToastHost.vue'
 import type { ConfigResult } from '@/config/env'
 import { createAssetResolver, DEFAULT_MANIFEST } from '@/assets/manifest'
 import { configureAudio } from '@/audio/engine'
+import { provideAssets } from '@/state/assets'
 import { clearSignedUrlCache, signedUrl } from '@/data/storage'
 import { initSupabase } from '@/data/supabase'
 import AuthScreen from '@/screens/AuthScreen.vue'
@@ -23,6 +24,7 @@ const wantsPreview = computed(() => props.previewEnabled && location.hash === '#
 onMounted(async () => {
   if (!props.config.ok) return
   initSupabase(props.config.config)
+  provideAssets({ manifest: DEFAULT_MANIFEST, resolver: createAssetResolver(signedUrl) })
   configureAudio({ manifest: DEFAULT_MANIFEST, resolver: createAssetResolver(signedUrl) })
   await initSession()
 })

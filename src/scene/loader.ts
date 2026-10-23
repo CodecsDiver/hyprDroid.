@@ -1,4 +1,4 @@
-import { AnimationMixer, LoopOnce, LoopRepeat, Group, type AnimationAction, type AnimationClip, type Object3D } from 'three'
+import { AnimationMixer, LinearSRGBColorSpace, LoopOnce, LoopRepeat, Group, SRGBColorSpace, TextureLoader, type AnimationAction, type AnimationClip, type Mesh, type MeshStandardMaterial, type Object3D } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { AnimationBinding, AssetManifest, AssetResolver, ModelAsset } from '@/assets/manifest'
 import { INTERACTIONS, type InteractionDefinition } from '@/registry/interactionRegistry'
@@ -102,9 +102,39 @@ export async function buildHouse(manifest: AssetManifest, resolver: AssetResolve
     } else missing.push(definition.id)
   }
 
+  await applyTextureOverrides(root, manifest, resolver, warnings)
   root.updateMatrixWorld(true)
   for (const node of roots.values()) attachHitProxy(node)
   return { root, roots, animations, placeholders, missing, fromAsset, warnings }
+}
+
+/**
+ * `manifest.textures.<nodeName>` replaces the colour map of the mesh with that exact name
+ * (placeholder meshes: floor, wall_back, wall_left, rug; in a GLB: any mesh you name the same).
+ * A texture that fails to load is reported and skipped, never fatal.
+ */
+export async function applyTextureOverrides(root: Object3D, manifest: AssetManifest, resolver: AssetResolver, warnings: string[]): Promise<void> {
+  const loader = new TextureLoader()
+  for (const [name, asset] of Object.entries(manifest.textures)) {
+    if (!asset.source) continue
+    const target = root.getObjectByName(name) as Mesh | undefined
+    if (!target?.isMesh) {
+      warnings.push(`texture "${name}": no mesh with that name in the scene`)
+      continue
+    }
+    try {
+      const url = await resolver.url(asset.source)
+      if (!url) continue
+      const texture = await loader.loadAsync(url)
+      texture.colorSpace = asset.colorSpace === 'linear' ? LinearSRGBColorSpace : SRGBColorSpace
+      const material = (Array.isArray(target.material) ? target.material[0] : target.material) as MeshStandardMaterial | undefined
+      if (!material) continue
+      material.map = texture
+      material.needsUpdate = true
+    } catch (error) {
+      warnings.push(`texture "${name}" failed to load: ${String(error)}`)
+    }
+  }
 }
 
 /** Plays manifest-bound animation clips on triggers. A no-op when there are none. */
