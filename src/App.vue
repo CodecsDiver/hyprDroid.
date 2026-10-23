@@ -15,6 +15,7 @@ import { initSession, session } from '@/state/session'
 
 const props = defineProps<{ previewEnabled: boolean }>()
 
+const reload = (): void => location.reload()
 const wantsPreview = computed(() => props.previewEnabled && location.hash === '#/scene-preview')
 
 onMounted(async () => {
@@ -34,6 +35,12 @@ watch(() => session.me?.user.id ?? null, (userId) => {
   <ErrorBoundary label="Signal Home">
     <ScenePreview v-if="wantsPreview" />
     <LoadingState v-else-if="session.status === 'loading' || (session.status === 'signedIn' && (home.status === 'idle' || home.status === 'loading'))" label="Opening the door…" />
+    <main v-else-if="session.status === 'failed'" class="fail">
+      <h1>Signal Home could not start</h1>
+      <p role="alert">{{ session.problem }}</p>
+      <p class="hint">Try opening the file in Chrome, Edge or Firefox, not inside another app's preview.</p>
+      <button type="button" class="btn" @click="reload">Try again</button>
+    </main>
     <AuthScreen v-else-if="session.status === 'signedOut'" />
     <main v-else-if="home.status === 'error'" class="fail">
       <p role="alert">{{ home.error }}</p>

@@ -33,6 +33,9 @@ let persona: string | null = null
 const fileUrls = new Map<string, string>()
 
 export const storageIsPersistent = (): boolean => store?.persistent ?? false
+let seedProblem: string | null = null
+/** Set if loading your originals on first open failed (the app still works without them). */
+export const firstRunProblem = (): string | null => seedProblem
 
 async function registerFile(id: string): Promise<void> {
   if (!store || fileUrls.has(id)) return
@@ -58,7 +61,13 @@ export async function startLocalBackend(seed: PrivateSeed | null): Promise<void>
   })
   setFileHooks({ url: (id) => fileUrls.get(id) ?? '', stored: registerFile })
 
-  if (seed && !(await store.get('meta/seeded'))) await seedFirstRun(seed, (path, method, body, bytes) => call(handler, path, method, body, bytes))
+  if (seed && !(await store.get('meta/seeded'))) {
+    try {
+      await seedFirstRun(seed, (path, method, body, bytes) => call(handler, path, method, body, bytes))
+    } catch (error) {
+      seedProblem = error instanceof Error ? error.message : String(error) // start anyway; it will try again next time
+    }
+  }
   await Promise.all((await store.list('files/')).map((key) => registerFile(key.slice('files/'.length))))
   void purgeExpired(store, Date.now()).catch(() => {})
 }

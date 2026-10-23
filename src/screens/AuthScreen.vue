@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { storageIsPersistent, PEOPLE } from '@/local/backend'
+import { firstRunProblem, storageIsPersistent, PEOPLE } from '@/local/backend'
 import { useManifestImage } from '@/state/assets'
 import { chooseWhoIsHere } from '@/state/session'
 import { useAction } from '@/state/useAsync'
@@ -21,6 +21,7 @@ const choose = useAction(async (id: (typeof PEOPLE)[number]['id']) => {
       <button v-for="person in PEOPLE" :key="person.id" type="button" class="btn btn--primary" :disabled="choose.busy.value" @click="choose.run(person.id)">I’m {{ person.name }}</button>
     </div>
     <p class="hint">Everything lives only in this browser. There are no accounts, and nothing is sent anywhere.</p>
+    <p v-if="firstRunProblem()" class="hint" role="alert">Your original files could not be loaded ({{ firstRunProblem() }}). Everything else works.</p>
     <p v-if="!storageIsPersistent()" class="hint" role="status">This browser would not give the page any storage (a private window?), so everything will be forgotten when you close it.</p>
   </main>
 </template>

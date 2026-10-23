@@ -12,6 +12,13 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('browser storage did not respond')), ms)
+    work.then((value) => { clearTimeout(timer); resolve(value) }, (error) => { clearTimeout(timer); reject(error) })
+  })
+}
+
 /**
  * The browser's copy of everything: an in-memory map (so reads and the server's conditional writes stay synchronous and
  * atomic) mirrored to this browser's own IndexedDB. Nothing leaves the page. If IndexedDB is unavailable (some private
@@ -28,8 +35,9 @@ export class LocalStore extends BytesStore {
   static async open(): Promise<LocalStore> {
     const store = new LocalStore()
     try {
-      const db = await openDb()
-      await new Promise<void>((resolve, reject) => {
+      // Some browsers (and some ways of opening a downloaded file) never answer; do not wait forever.
+      const db = await withTimeout(openDb(), 4000)
+      await withTimeout(new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE, 'readonly')
         const os = tx.objectStore(STORE)
         const keys = os.getAllKeys()
@@ -39,7 +47,7 @@ export class LocalStore extends BytesStore {
           resolve()
         }
         tx.onerror = () => reject(tx.error)
-      })
+      }), 8000)
       store.db = db
       store.persistent = true
       const flush = (): void => void store.flush()

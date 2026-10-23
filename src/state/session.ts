@@ -5,10 +5,11 @@ import privateSeed from 'virtual:private-seed'
 import type { Me } from '@/shared/types'
 
 export const session = reactive<{
-  status: 'loading' | 'signedOut' | 'signedIn'
+  status: 'loading' | 'signedOut' | 'signedIn' | 'failed'
   me: Me | null
   userId: string | null
-}>({ status: 'loading', me: null, userId: null })
+  problem: string | null
+}>({ status: 'loading', me: null, userId: null, problem: null })
 
 function apply(me: Me | null): void {
   session.me = me
@@ -18,8 +19,13 @@ function apply(me: Me | null): void {
 
 /** Opens this browser's own copy of the data. There is no sign-in: the first screen just asks who is here. */
 export async function initSession(): Promise<void> {
-  await startLocalBackend(privateSeed)
-  apply(null)
+  try {
+    await startLocalBackend(privateSeed)
+    apply(null)
+  } catch (error) {
+    session.problem = error instanceof Error ? error.message : String(error)
+    session.status = 'failed'
+  }
 }
 
 export async function chooseWhoIsHere(id: (typeof PEOPLE)[number]['id']): Promise<void> {
