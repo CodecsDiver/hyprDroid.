@@ -9,6 +9,8 @@ use crate::{
 
 pub const MAX_FILE_BYTES: usize = 256 * 1024;
 pub const RESERVED_CHECKS_FILE_NAME: &str = "_checks.py";
+/// The file the objective tests import. It can be edited but never renamed or deleted.
+pub const MAIN_FILE_NAME: &str = "main.py";
 
 pub fn validate_project_id(project_id: &str) -> Result<(), AppError> {
     let is_valid = !project_id.is_empty()
@@ -94,9 +96,86 @@ pub fn write_project_file(
     write_atomically(&directory.join(&file_name), content.as_bytes())
 }
 
+fn delete_in(directory: &std::path::Path, file_name: &str) -> Result<(), AppError> {
+    validate_file_name(file_name)?;
+    if file_name == MAIN_FILE_NAME {
+        return Err(AppError::new("not-editable", format!("{MAIN_FILE_NAME} is checked by the missions and cannot be deleted")));
+    }
+    match fs::remove_file(directory.join(file_name)) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn rename_in(directory: &std::path::Path, from: &str, to: &str) -> Result<(), AppError> {
+    validate_file_name(from)?;
+    validate_file_name(to)?;
+    if from == MAIN_FILE_NAME || to == MAIN_FILE_NAME {
+        return Err(AppError::new("not-editable", format!("{MAIN_FILE_NAME} cannot be renamed or replaced")));
+    }
+    let target = directory.join(to);
+    if target.exists() {
+        return Err(AppError::new("file-already-exists", format!("{to} already exists")));
+    }
+    fs::rename(directory.join(from), target)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_project_file(app: AppHandle, project_id: String, file_name: String) -> Result<(), AppError> {
+    delete_in(&project_directory(&app, &project_id)?, &file_name)
+}
+
+#[tauri::command]
+pub fn rename_project_file(app: AppHandle, project_id: String, from: String, to: String) -> Result<(), AppError> {
+    rename_in(&project_directory(&app, &project_id)?, &from, &to)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn scratch_directory(name: &str) -> std::path::PathBuf {
+        let directory = std::env::temp_dir().join(format!("pydisc-files-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        directory
+    }
+
+    #[test]
+    fn rename_moves_a_file_and_refuses_to_overwrite_or_touch_main() {
+        let directory = scratch_directory("rename");
+        fs::write(directory.join("a.py"), "a").unwrap();
+        fs::write(directory.join("b.py"), "b").unwrap();
+        fs::write(directory.join("main.py"), "m").unwrap();
+
+        rename_in(&directory, "a.py", "c.py").unwrap();
+        assert_eq!(fs::read_to_string(directory.join("c.py")).unwrap(), "a");
+        assert!(!directory.join("a.py").exists());
+
+        assert_eq!(rename_in(&directory, "c.py", "b.py").unwrap_err().code, "file-already-exists");
+        assert_eq!(fs::read_to_string(directory.join("b.py")).unwrap(), "b");
+        assert_eq!(rename_in(&directory, "main.py", "x.py").unwrap_err().code, "not-editable");
+        assert_eq!(rename_in(&directory, "c.py", "main.py").unwrap_err().code, "not-editable");
+        assert_eq!(rename_in(&directory, "c.py", "../evil.py").unwrap_err().code, "unsafe-path");
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn delete_removes_files_but_never_main() {
+        let directory = scratch_directory("delete");
+        fs::write(directory.join("helpers.py"), "h").unwrap();
+        fs::write(directory.join("main.py"), "m").unwrap();
+
+        delete_in(&directory, "helpers.py").unwrap();
+        assert!(!directory.join("helpers.py").exists());
+        delete_in(&directory, "helpers.py").unwrap();
+        assert_eq!(delete_in(&directory, "main.py").unwrap_err().code, "not-editable");
+        assert!(directory.join("main.py").exists());
+        assert_eq!(delete_in(&directory, "../main.py").unwrap_err().code, "unsafe-path");
+        fs::remove_dir_all(directory).unwrap();
+    }
 
     #[test]
     fn accepts_plain_python_file_names() {

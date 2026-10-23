@@ -93,6 +93,37 @@ export async function writeProjectFile(projectId: string, fileName: string, cont
   await invoke('write_project_file', { projectId, fileName, content })
 }
 
+export async function listProjectFiles(projectId: string): Promise<string[]> {
+  if (!isNativeRuntime()) return Object.keys(webProjectFiles(projectId)).sort()
+  return invoke<string[]>('list_project_files', { projectId })
+}
+
+export async function deleteProjectFile(projectId: string, fileName: string): Promise<void> {
+  if (!isNativeRuntime()) {
+    try {
+      localStorage.removeItem(`${WEB_PREFIX}file:${projectId}/${fileName}`)
+    } catch {
+      throw { code: 'storage', message: 'browser storage is unavailable' } satisfies BackendError
+    }
+    return
+  }
+  await invoke('delete_project_file', { projectId, fileName })
+}
+
+export async function renameProjectFile(projectId: string, from: string, to: string): Promise<void> {
+  if (!isNativeRuntime()) {
+    const content = webRead(`file:${projectId}/${from}`)
+    if (content === null) throw { code: 'file-not-found', message: `${from} does not exist` } satisfies BackendError
+    if (webRead(`file:${projectId}/${to}`) !== null) {
+      throw { code: 'file-already-exists', message: `${to} already exists` } satisfies BackendError
+    }
+    webWrite(`file:${projectId}/${to}`, content)
+    await deleteProjectFile(projectId, from)
+    return
+  }
+  await invoke('rename_project_file', { projectId, from, to })
+}
+
 export async function getSandboxStatus(): Promise<SandboxStatus | null> {
   if (!isNativeRuntime()) return null
   return invoke<SandboxStatus>('sandbox_status')

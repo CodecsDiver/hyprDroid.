@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
+  deleteProjectFile,
   getSandboxStatus,
+  listProjectFiles,
   readProjectFile,
+  renameProjectFile,
   runChecks,
   runPython,
   toBackendError,
@@ -12,6 +15,7 @@ import {
   type SandboxStatus,
 } from '../backend/backend'
 import { buildCheckSource, parseCheckOutput } from '../curriculum/harness'
+import { normalizeNewFileName, sortFileNames, validateNewFileName } from '../curriculum/fileNames'
 import { findProject, MAIN_FILE_NAME, PROJECTS } from '../curriculum/projects'
 import type { ObjectiveResult } from '../curriculum/types'
 import { emitJuice } from '../juice/juiceBus'
@@ -34,6 +38,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const selectedProjectId = ref(PROJECTS[0].id)
   const code = ref('')
   const savedCode = ref('')
+  /** Every .py file in the mission folder, main.py first. `code`/`savedCode` always belong to the active one. */
+  const fileNames = ref<string[]>([MAIN_FILE_NAME])
+  const activeFileName = ref(MAIN_FILE_NAME)
   const isProjectLoaded = ref(false)
   const lastSavedAt = ref<number | null>(null)
   const saveError = ref<BackendError | null>(null)
@@ -70,16 +77,101 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     objectiveResults.value = {}
     saveError.value = null
     try {
+      activeFileName.value = MAIN_FILE_NAME
       const existing = await readProjectFile(project.id, MAIN_FILE_NAME)
       code.value = existing ?? project.starterCode
       savedCode.value = existing ?? ''
       if (existing === null) await save({ manual: false })
+      fileNames.value = sortFileNames([MAIN_FILE_NAME, ...(await listProjectFiles(project.id).catch(() => []))])
     } catch (error) {
       saveError.value = toBackendError(error)
       code.value = project.starterCode
+      fileNames.value = [MAIN_FILE_NAME]
     }
     lastRewardedSaveCode = savedCode.value
     isProjectLoaded.value = true
+  }
+
+  /** Saves the current file first so switching never loses edits. Returns false if that save failed. */
+  async function flushActiveFile(): Promise<boolean> {
+    return isDirty.value ? save({ manual: false }) : true
+  }
+
+  async function openFile(fileName: string): Promise<void> {
+    if (fileName === activeFileName.value || !fileNames.value.includes(fileName)) return
+    if (!(await flushActiveFile())) return
+    try {
+      const content = await readProjectFile(selectedProjectId.value, fileName)
+      if (content === null) {
+        saveError.value = { code: 'file-not-found', message: `${fileName} no longer exists` }
+        fileNames.value = fileNames.value.filter((name) => name !== fileName)
+        return
+      }
+      activeFileName.value = fileName
+      code.value = content
+      savedCode.value = content
+      lastRewardedSaveCode = content
+      saveError.value = null
+    } catch (error) {
+      saveError.value = toBackendError(error)
+    }
+  }
+
+  /** Creates an empty file in the mission and opens it. Returns an error message, or null on success. */
+  async function createFile(rawName: string): Promise<string | null> {
+    const problem = validateNewFileName(rawName, fileNames.value)
+    if (problem) return problem
+    if (!(await flushActiveFile())) return 'Could not save the current file first'
+    const name = normalizeNewFileName(rawName)
+    try {
+      await writeProjectFile(selectedProjectId.value, name, '')
+    } catch (error) {
+      return toBackendError(error).message
+    }
+    fileNames.value = sortFileNames([...fileNames.value, name])
+    activeFileName.value = name
+    code.value = ''
+    savedCode.value = ''
+    lastRewardedSaveCode = ''
+    return null
+  }
+
+  async function renameFile(fromName: string, rawNewName: string): Promise<string | null> {
+    if (fromName === MAIN_FILE_NAME) return `${MAIN_FILE_NAME} is checked by the mission and cannot be renamed`
+    const problem = validateNewFileName(rawNewName, fileNames.value)
+    if (problem) return problem
+    if (fromName === activeFileName.value && !(await flushActiveFile())) return 'Could not save the file first'
+    const newName = normalizeNewFileName(rawNewName)
+    try {
+      await renameProjectFile(selectedProjectId.value, fromName, newName)
+    } catch (error) {
+      return toBackendError(error).message
+    }
+    fileNames.value = sortFileNames(fileNames.value.map((name) => (name === fromName ? newName : name)))
+    if (activeFileName.value === fromName) activeFileName.value = newName
+    return null
+  }
+
+  async function deleteFile(fileName: string): Promise<string | null> {
+    if (fileName === MAIN_FILE_NAME) return `${MAIN_FILE_NAME} is checked by the mission and cannot be deleted`
+    try {
+      await deleteProjectFile(selectedProjectId.value, fileName)
+    } catch (error) {
+      return toBackendError(error).message
+    }
+    const wasActive = activeFileName.value === fileName
+    fileNames.value = fileNames.value.filter((name) => name !== fileName)
+    if (wasActive) {
+      savedCode.value = code.value
+      await openFile(MAIN_FILE_NAME).catch(() => undefined)
+      if (activeFileName.value === fileName) activeFileName.value = MAIN_FILE_NAME
+    }
+    return null
+  }
+
+  async function resetToStarter(): Promise<void> {
+    await openFile(MAIN_FILE_NAME)
+    updateCode(selectedProject.value.starterCode)
   }
 
   function updateCode(newCode: string): void {
@@ -96,10 +188,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function save(options: { manual: boolean }): Promise<boolean> {
     clearTimeout(autosaveTimer)
     const contentToWrite = code.value
+    const fileToWrite = activeFileName.value
     isSaving.value = true
     try {
-      await writeProjectFile(selectedProjectId.value, MAIN_FILE_NAME, contentToWrite)
-      savedCode.value = contentToWrite
+      await writeProjectFile(selectedProjectId.value, fileToWrite, contentToWrite)
+      // Only mark clean if the student has not switched files while the write was in flight.
+      if (fileToWrite === activeFileName.value) savedCode.value = contentToWrite
       lastSavedAt.value = Date.now()
       saveError.value = null
       if (options.manual) {
@@ -172,7 +266,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     emitJuice({ kind: 'run-started' })
     try {
       if (!(await save({ manual: false }))) return
-      const outcome = await withContainment((allow) => runPython(selectedProjectId.value, MAIN_FILE_NAME, allow))
+      const outcome = await withContainment((allow) => runPython(selectedProjectId.value, activeFileName.value, allow))
       if (outcome) {
         output.value = { kind: 'run', outcome }
         progression.record({ type: 'code_run' })
@@ -241,8 +335,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   return {
-    selectedProjectId, selectedProject, code, savedCode, isDirty, isProjectLoaded, lastSavedAt, saveError,
+    selectedProjectId, selectedProject, code, savedCode, fileNames, activeFileName, isDirty, isProjectLoaded, lastSavedAt, saveError,
     isSaving, isRunning, isChecking, isBusy, output, objectiveResults, sandbox, consentRequest,
-    metObjectiveCount, initialize, selectProject, clearOutput, reportError, goToMissionOffset, updateCode, save, run, checkWork, answerConsent,
+    metObjectiveCount, initialize, selectProject, openFile, createFile, renameFile, deleteFile, resetToStarter, clearOutput, reportError, goToMissionOffset, updateCode, save, run, checkWork, answerConsent,
   }
 })

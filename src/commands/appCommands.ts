@@ -4,6 +4,7 @@ import { useSettingsStore, type AnimationIntensity } from '../stores/settingsSto
 import { useUiStore } from '../stores/uiStore'
 import { useWorkspaceStore } from '../stores/workspaceStore'
 import type { AppCommand } from './commandRegistry'
+import { requestDelete, requestNewFile, requestRename } from './fileActions'
 import { downloadTextFile, pickTextFile } from './fileTransfer'
 
 export interface CommandContext {
@@ -45,21 +46,24 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
   }
 
   async function resetMission(): Promise<void> {
-    const confirmed = await ui.confirm('Reset mission code?', `${workspace.selectedProject.title} goes back to its starter code. Objectives you already cleared stay cleared.`, 'Reset')
+    const confirmed = await ui.confirm('Reset mission code?', `main.py in ${workspace.selectedProject.title} goes back to its starter code. Objectives you already cleared stay cleared.`, 'Reset')
     if (!confirmed) return
-    workspace.updateCode(workspace.selectedProject.starterCode)
+    await workspace.resetToStarter()
     context.focusEditor()
   }
 
   const commands: AppCommand[] = [
+    { id: 'file.new', title: 'New file...', category: 'File', shortcuts: ['Ctrl+Alt+N'], run: () => requestNewFile() },
     { id: 'file.save', title: 'Save', category: 'File', shortcuts: ['Ctrl+S'], run: () => void workspace.save({ manual: true }), isEnabled: () => workspace.isDirty },
     { id: 'file.import', title: 'Import .py file...', category: 'File', shortcuts: ['Ctrl+O'], run: importFile },
     {
       id: 'file.export', title: 'Export code as .py', category: 'File', shortcuts: ['Ctrl+Shift+S'],
-      run: () => downloadTextFile(`${workspace.selectedProject.id.replace(/-/g, '_')}.py`, workspace.code),
+      run: () => downloadTextFile(workspace.activeFileName, workspace.code),
       isEnabled: () => !isNativeRuntime(),
     },
-    { id: 'file.reset', title: 'Reset mission code to starter...', category: 'File', run: resetMission },
+    { id: 'file.rename', title: 'Rename current file...', category: 'File', shortcuts: ['F2'], run: () => requestRename(workspace.activeFileName), isEnabled: () => workspace.activeFileName !== MAIN_FILE_NAME },
+    { id: 'file.delete', title: 'Delete current file...', category: 'File', run: () => requestDelete(workspace.activeFileName), isEnabled: () => workspace.activeFileName !== MAIN_FILE_NAME },
+    { id: 'file.reset', title: 'Reset main.py to starter code...', category: 'File', run: resetMission },
     { id: 'file.lab', title: 'Open Visualizer Lab', category: 'File', shortcuts: ['Ctrl+Alt+L'], run: () => context.openLab() },
     { id: 'file.close', title: 'Close window', category: 'File', run: () => context.closeWindow(), isEnabled: () => isNativeRuntime() },
 

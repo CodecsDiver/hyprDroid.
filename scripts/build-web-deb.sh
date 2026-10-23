@@ -55,5 +55,5 @@ PRERM
 chmod 0755 "$pkg/DEBIAN/postinst" "$pkg/DEBIAN/prerm"
 
 mkdir -p release
-dpkg-deb --root-owner-group --build "$pkg" "release/python-discovery-web_${version}_all.deb" >/dev/null
+dpkg-deb -Zxz --root-owner-group --build "$pkg" "release/python-discovery-web_${version}_all.deb" >/dev/null
 echo "Built release/python-discovery-web_${version}_all.deb"

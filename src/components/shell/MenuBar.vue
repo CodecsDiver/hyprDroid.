@@ -11,7 +11,7 @@ const commands = inject(APP_COMMANDS_KEY, [] as AppCommand[])
 const byId = computed(() => new Map(commands.map((command) => [command.id, command])))
 
 const MENUS: ReadonlyArray<{ label: string; entries: MenuEntry[] }> = [
-  { label: 'File', entries: ['file.save', 'file.import', 'file.export', '---', 'file.reset', '---', 'file.lab', ...(isNativeRuntime() ? ['---', 'file.close'] : [])] },
+  { label: 'File', entries: ['file.new', 'file.save', '---', 'file.rename', 'file.delete', '---', 'file.import', 'file.export', '---', 'file.reset', '---', 'file.lab', ...(isNativeRuntime() ? ['---', 'file.close'] : [])] },
   { label: 'Edit', entries: ['edit.undo', 'edit.redo', '---', 'edit.cut', 'edit.copy', '---', 'edit.selectAll', '---', 'edit.find', 'edit.replace', '---', 'edit.comment', 'edit.gotoLine'] },
   {
     label: 'View',

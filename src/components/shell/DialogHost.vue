@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { AppCommand } from '../../commands/commandRegistry'
 import { APP_COMMANDS_KEY } from '../../commands/injection'
 import { isNativeRuntime } from '../../backend/backend'
@@ -8,6 +8,19 @@ import { useUiStore } from '../../stores/uiStore'
 const ui = useUiStore()
 const appVersion = __APP_VERSION__
 const commands = inject(APP_COMMANDS_KEY, [] as AppCommand[])
+const promptValue = ref('')
+const promptInput = ref<HTMLInputElement>()
+const promptError = computed(() => (ui.dialog?.kind === 'prompt' ? ui.dialog.validate(promptValue.value) : null))
+watch(
+  () => ui.dialog,
+  async (dialog) => {
+    if (dialog?.kind !== 'prompt') return
+    promptValue.value = dialog.initial
+    await nextTick()
+    promptInput.value?.focus()
+    promptInput.value?.select()
+  },
+)
 const shortcutRows = computed(() => commands.filter((command) => command.shortcuts?.length))
 
 function onKeydown(event: KeyboardEvent): void {
@@ -28,6 +41,29 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <div class="actions">
           <button class="btn is-ghost" @click="ui.closeDialog(false)">Cancel</button>
           <button class="btn is-amber" @click="ui.closeDialog(true)">{{ ui.dialog.confirmLabel }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="ui.dialog.kind === 'prompt'" class="dialog panel">
+      <div class="panel-title">{{ ui.dialog.title }}</div>
+      <div class="content">
+        <label class="field">
+          <span class="field-label">{{ ui.dialog.label }}</span>
+          <input
+            ref="promptInput"
+            v-model="promptValue"
+            class="text-input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            @keydown.enter.prevent="ui.submitPrompt(promptValue)"
+          />
+        </label>
+        <p class="field-error">{{ promptError ?? '' }}</p>
+        <div class="actions">
+          <button class="btn is-ghost" @click="ui.closeDialog(false)">Cancel</button>
+          <button class="btn is-green" :disabled="promptError !== null" @click="ui.submitPrompt(promptValue)">{{ ui.dialog.confirmLabel }}</button>
         </div>
       </div>
     </div>
@@ -64,6 +100,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .content { padding: 16px 20px 20px; line-height: 1.6; max-height: 70vh; overflow: auto; }
 .content p { margin: 0 0 12px; }
 .dim { color: var(--text-dim); font-size: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+.text-input {
+  padding: 10px 12px; font-family: inherit; font-size: 15px; color: var(--text); background: rgba(4, 5, 10, 0.85);
+  border: 1px solid var(--glass-edge); outline: none; user-select: text; -webkit-user-select: text;
+}
+.text-input:focus { border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
+.field-error { min-height: 18px; margin: 6px 0 0; font-size: 12px; color: var(--neon-red); }
 .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
 table { width: 100%; border-collapse: collapse; }
 td { padding: 5px 0; border-bottom: 1px solid rgba(113, 134, 160, 0.15); }

@@ -12,6 +12,8 @@ pub fn run() {
             projects::list_project_files,
             projects::read_project_file,
             projects::write_project_file,
+            projects::delete_project_file,
+            projects::rename_project_file,
             runner::sandbox_status,
             runner::run_python,
             runner::run_checks,

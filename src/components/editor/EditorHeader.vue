@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
+import FileTabs from './FileTabs.vue'
 
 const workspace = useWorkspaceStore()
 
@@ -19,11 +20,7 @@ const saveState = computed(() => {
 
 <template>
   <div class="editor-header">
-    <div class="tab" :class="{ dirty: workspace.isDirty }">
-      <span class="tab-icon">PY</span>
-      main.py
-      <span v-if="workspace.isDirty" class="dirty-dot" title="Unsaved changes" />
-    </div>
+    <FileTabs />
     <div class="save-state" :class="saveState" :title="workspace.saveError?.message">{{ saveLabel }}</div>
     <div class="spacer" />
     <button class="btn is-ghost" :disabled="!workspace.isDirty || workspace.isSaving" @click="workspace.save({ manual: true })">
@@ -39,15 +36,7 @@ const saveState = computed(() => {
 </template>
 
 <style scoped>
-.editor-header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid rgba(25, 230, 255, 0.16); }
-.tab {
-  display: flex; align-items: center; gap: 8px; padding: 6px 14px;
-  font-weight: 700; color: var(--text);
-  background: linear-gradient(180deg, rgba(25, 230, 255, 0.16), rgba(25, 230, 255, 0.02));
-  border-top: 2px solid var(--neon-cyan);
-}
-.tab-icon { font-size: 9px; padding: 1px 4px; color: var(--void); background: var(--neon-amber); border-radius: 2px; }
-.dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--neon-amber); box-shadow: 0 0 8px var(--neon-amber); }
+.editor-header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; border-bottom: 1px solid rgba(25, 230, 255, 0.16); }
 .save-state { font-size: 10px; letter-spacing: 0.2em; }
 .save-state.clean { color: var(--neon-green); }
 .save-state.dirty { color: var(--neon-amber); }

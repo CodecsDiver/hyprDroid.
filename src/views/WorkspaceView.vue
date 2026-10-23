@@ -167,7 +167,7 @@ onBeforeUnmount(() => {
           <CodeEditor
             v-if="workspace.isProjectLoaded"
             ref="editorRef"
-            :key="workspace.selectedProjectId"
+            :key="`${workspace.selectedProjectId}:${workspace.activeFileName}`"
             :model-value="workspace.code"
             :font-size="settings.editorFontSize"
             @update:model-value="workspace.updateCode"
