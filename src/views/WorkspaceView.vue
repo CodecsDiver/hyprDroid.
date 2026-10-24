@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ThemeEditor from '../components/theme/ThemeEditor.vue'
+import { usePracticeStore } from '../stores/practiceStore'
 import { useThemeStore } from '../stores/themeStore'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
@@ -33,6 +34,7 @@ import { useWorkspaceStore } from '../stores/workspaceStore'
 
 const settings = useSettingsStore()
 const theme = useThemeStore()
+const practice = usePracticeStore()
 const progression = useProgressionStore()
 const workspace = useWorkspaceStore()
 const ui = useUiStore()
@@ -103,6 +105,7 @@ onMounted(async () => {
   await settings.load()
   await theme.load()
   await progression.load()
+  await practice.load()
   stopSound = startSoundEngine(() => settings.soundEnabled)
   if (!isNativeRuntime()) {
     stopWebPythonStatus = onWebPythonStatus((status, failure) => {

@@ -20,7 +20,7 @@ export interface SandboxStatus {
   bubblewrapUsable: boolean
 }
 
-export type DocumentName = 'settings' | 'progression' | 'theme'
+export type DocumentName = 'settings' | 'progression' | 'theme' | 'practice'
 
 /**
  * Two runtimes share one UI. In the desktop app (Tauri) the Rust backend stores files on disk and runs
@@ -175,6 +175,14 @@ export async function openThemeSite(): Promise<void> {
     return
   }
   await invoke('open_theme_site')
+}
+
+export async function openSolutionWindow(): Promise<void> {
+  if (!isNativeRuntime()) {
+    window.open(`${location.pathname}?view=solution`, 'pydisc-solution', 'width=980,height=860')
+    return
+  }
+  await invoke('open_solution_window')
 }
 
 export async function openLabWindow(): Promise<void> {

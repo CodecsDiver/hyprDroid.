@@ -19,7 +19,10 @@ import { normalizeNewFileName, sortFileNames, validateNewFileName } from '../cur
 import { findProject, MAIN_FILE_NAME, PROJECTS } from '../curriculum/projects'
 import type { ObjectiveResult } from '../curriculum/types'
 import { emitJuice } from '../juice/juiceBus'
+import { MAX_STRIKES } from '../practice/strikes'
+import { usePracticeStore } from './practiceStore'
 import { useProgressionStore } from './progressionStore'
+import { useUiStore } from './uiStore'
 
 const AUTOSAVE_DELAY_MS = 1200
 const OBJECTIVE_REVEAL_STAGGER_MS = 650
@@ -34,6 +37,8 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 
 export const useWorkspaceStore = defineStore('workspace', () => {
   const progression = useProgressionStore()
+  const practice = usePracticeStore()
+  const ui = useUiStore()
 
   const selectedProjectId = ref(PROJECTS[0].id)
   const code = ref('')
@@ -294,6 +299,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (!results) {
         objectiveResults.value = {}
         emitJuice({ kind: 'objective-failed' })
+        await takeStrike(project.id)
         return
       }
 
@@ -306,9 +312,22 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       }
       objectiveResults.value = resultsByObjective
       await revealResults(project.id, resultsByObjective)
+      if (project.objectives.some((objective) => resultsByObjective[objective.id].status !== 'pass')) await takeStrike(project.id)
     } finally {
       isChecking.value = false
     }
+  }
+
+  /** A failed Check my work costs one strike. The third one opens the full commented solution. */
+  async function takeStrike(missionId: string): Promise<void> {
+    const outcome = practice.registerFailedCheck(missionId)
+    if (!outcome.justUnlocked) return
+    const wantsSolution = await ui.confirm(
+      `Strike ${MAX_STRIKES} of ${MAX_STRIKES}`,
+      'Three checks have not passed. Here is the full solution, commented to explain what each part does, why, and how. Read it, then type it into your own file.',
+      'Open the solution',
+    )
+    if (wantsSolution) await practice.openSolution(missionId)
   }
 
   async function revealResults(projectId: string, results: Record<string, ObjectiveResult>): Promise<void> {
@@ -332,6 +351,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       emitJuice({ kind: 'project-completed', title: project.title })
       progression.record({ type: 'project_completed', projectId: project.id, difficulty: project.difficulty })
     }
+    if (allPassed) practice.registerMissionCleared(project.id)
   }
 
   return {

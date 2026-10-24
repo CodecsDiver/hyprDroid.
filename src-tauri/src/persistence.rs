@@ -5,7 +5,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::errors::AppError;
 
-const ALLOWED_DOCUMENT_NAMES: [&str; 3] = ["settings", "progression", "theme"];
+const ALLOWED_DOCUMENT_NAMES: [&str; 4] = ["settings", "progression", "theme", "practice"];
 
 pub fn app_data_directory(app: &AppHandle) -> Result<PathBuf, AppError> {
     let directory = app
