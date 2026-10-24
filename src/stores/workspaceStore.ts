@@ -69,8 +69,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const selectedProject = computed(() => findWorkspace(selectedProjectId.value) ?? PROJECTS[0])
   const isFreeCode = computed(() => selectedProjectId.value === FREE_CODE_ID)
-  /** Mission files the checks depend on cannot be renamed or deleted; the free workspace has none. */
-  const isProtectedFile = (fileName: string) => !isFreeCode.value && fileName === MAIN_FILE_NAME
+  /** main.py is every workspace's entry file (the mission checks import it), so it can be edited but never renamed or deleted. */
+  const isProtectedFile = (fileName: string) => fileName === MAIN_FILE_NAME
   const listVisibleFiles = async (projectId: string) =>
     (await listProjectFiles(projectId).catch(() => [] as string[])).filter((name) => !RESERVED_FILE_NAMES.includes(name))
   const isDirty = computed(() => code.value !== savedCode.value)
@@ -171,7 +171,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function renameFile(fromName: string, rawNewName: string): Promise<string | null> {
-    if (isProtectedFile(fromName)) return `${MAIN_FILE_NAME} is checked by the mission and cannot be renamed`
+    if (isProtectedFile(fromName)) return `${MAIN_FILE_NAME} is the entry file of this workspace and cannot be renamed`
     const problem = validateNewFileName(rawNewName, fileNames.value)
     if (problem) return problem
     if (fromName === activeFileName.value && !(await flushActiveFile())) return 'Could not save the file first'
@@ -187,7 +187,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function deleteFile(fileName: string): Promise<string | null> {
-    if (isProtectedFile(fileName)) return `${MAIN_FILE_NAME} is checked by the mission and cannot be deleted`
+    if (isProtectedFile(fileName)) return `${MAIN_FILE_NAME} is the entry file of this workspace and cannot be deleted`
     if (fileNames.value.length <= 1) return 'A workspace needs at least one file. Create another one first.'
     try {
       await deleteProjectFile(selectedProjectId.value, fileName)

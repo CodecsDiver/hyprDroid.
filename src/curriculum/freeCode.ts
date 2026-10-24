@@ -4,7 +4,7 @@ import type { Project } from './types'
 export const FREE_CODE_ID = 'free-code'
 
 /**
- * The open workspace: no objectives, no checks, no protected files. It is a normal editor
+ * The open workspace: no objectives and no checks. It is a normal editor
  * for the student's own programs, kept in its own folder so missions are never touched.
  */
 export const FREE_CODE_PROJECT: Project = {
@@ -13,7 +13,7 @@ export const FREE_CODE_PROJECT: Project = {
   tagline: 'Your own programs, no rules',
   difficulty: 1,
   summary:
-    'An open editor: make as many files as you like, import one from another, and run any of them. Nothing here is checked and nothing is locked. Use Visualize to watch any list your code sorts.',
+    'An open editor: make as many files as you like, import one from another, and run any of them. Nothing here is checked. Use Visualize to watch any list your code sorts.',
   objectives: [],
   starterCode: `# FREE CODE
 # Write anything. Run it with Ctrl+Enter.
