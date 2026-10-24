@@ -3,7 +3,7 @@ import type { SortFrame } from '../visualizers/algorithms/sorting'
 export const TRACE_MARKER = '@@PYDISC_TRACE@@'
 export const TRACE_RUNNER_FILE_NAME = 'trace_runner.py'
 
-export type TraceMode = 'items' | 'merge'
+export type TraceMode = 'items' | 'merge' | 'auto'
 
 /**
  * A Python program that runs the student's main.py under sys.settrace and records how the list being
@@ -11,7 +11,7 @@ export type TraceMode = 'items' | 'merge'
  * recursive merge_sort calls and writes each returned merge back into the original positions.
  * It records only the first top-level call, so the later print() demo calls do not matter.
  */
-export function buildTraceRunnerSource(mode: TraceMode): string {
+export function buildTraceRunnerSource(mode: TraceMode, fileName = 'main.py'): string {
   return `import json
 import os
 import runpy
@@ -20,7 +20,7 @@ import sys
 MODE = "${mode}"
 MAX_FRAMES = 1500
 MAX_ITEMS = 40
-USER_FILE = os.path.join(os.getcwd(), "main.py")
+USER_FILE = os.path.join(os.getcwd(), "${fileName}")
 
 frames = []
 state = {"done": False, "tracked_id": None, "last": None, "root": None, "stack": [], "array": None}
@@ -43,11 +43,41 @@ def is_number_list(value):
     return isinstance(value, list) and len(value) <= MAX_ITEMS and all(isinstance(item, (int, float)) for item in value)
 
 
+def pick_auto_list(frame):
+    # Free code: follow the first list of numbers that actually changes, whatever it is called.
+    seen = state.setdefault("seen", {})
+    for name, value in list(frame.f_locals.items()):
+        if not is_number_list(value) or len(value) < 2:
+            continue
+        key = (id(frame), name)
+        before = seen.get(key)
+        seen[key] = list(value)
+        if before is not None and before != list(value):
+            state["name"] = name
+            return value, before
+    return None, None
+
+
 def items_local(frame, event, arg):
     if state["done"]:
         return None
     if event in ("line", "return"):
-        items = frame.f_locals.get("items")
+        if MODE == "auto":
+            if state["tracked_id"] is None:
+                found, before = pick_auto_list(frame)
+                if found is not None:
+                    state["tracked_id"] = id(found)
+                    state["root"] = frame
+                    state["last"] = list(before)
+                    add_frame(before, [], "Start: your code's list before it changes")
+                    current = list(found)
+                    changed = [i for i in range(len(current)) if current[i] != state["last"][i]]
+                    add_frame(current, changed, describe(changed, state["last"], current))
+                    state["last"] = current
+                return items_local
+            items = frame.f_locals.get(state["name"])
+        else:
+            items = frame.f_locals.get("items")
         if is_number_list(items) and (state["tracked_id"] is None or id(items) == state["tracked_id"]):
             current = list(items)
             if state["tracked_id"] is None:

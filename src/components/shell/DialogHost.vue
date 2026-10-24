@@ -4,6 +4,7 @@ import type { AppCommand } from '../../commands/commandRegistry'
 import { APP_COMMANDS_KEY } from '../../commands/injection'
 import { isNativeRuntime } from '../../backend/backend'
 import { useUiStore } from '../../stores/uiStore'
+import SortingVisualizer from '../../visualizers/panels/SortingVisualizer.vue'
 
 const ui = useUiStore()
 const appVersion = __APP_VERSION__
@@ -68,6 +69,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       </div>
     </div>
 
+    <div v-else-if="ui.dialog.kind === 'visualize'" class="dialog panel huge">
+      <div class="panel-title">Your code: {{ ui.dialog.fileName }}</div>
+      <div class="content viz-content">
+        <SortingVisualizer :trace-frames="ui.dialog.frames" student-only />
+        <div class="actions"><button class="btn is-ghost" @click="ui.closeDialog(false)">Close</button></div>
+      </div>
+    </div>
+
     <div v-else-if="ui.dialog.kind === 'about'" class="dialog panel">
       <div class="panel-title">About Python Discovery</div>
       <div class="content">
@@ -97,6 +106,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgb(var(--void-rgb) / 0.75); }
 .dialog { width: 480px; max-width: 92vw; background: var(--hull-raised); }
 .dialog.wide { width: 620px; }
+.dialog.huge { width: min(960px, 94vw); }
+.viz-content { height: min(560px, 74vh); display: flex; flex-direction: column; }
+.viz-content :deep(.viz) { flex: 1; min-height: 0; }
 .content { padding: 16px 20px 20px; line-height: 1.6; max-height: 70vh; overflow: auto; }
 .content p { margin: 0 0 12px; }
 .dim { color: var(--text-dim); font-size: 12px; }

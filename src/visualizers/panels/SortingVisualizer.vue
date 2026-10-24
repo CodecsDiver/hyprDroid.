@@ -9,6 +9,8 @@ const props = defineProps<{
   fixedAlgorithm?: SortAlgorithmId
   /** Frames recorded from the student's own code. When present they replace the built-in animation. */
   traceFrames?: SortFrame[] | null
+  /** The animation is only the student's own program: no algorithm picker, shuffle or complexity badge. */
+  studentOnly?: boolean
 }>()
 const algorithm = ref<SortAlgorithmId>(props.fixedAlgorithm ?? 'bubble')
 watch(() => props.fixedAlgorithm, (next) => next && (algorithm.value = next))
@@ -50,18 +52,18 @@ function barClass(index: number): string {
 <template>
   <div class="viz">
     <div class="toolbar">
-      <label v-if="!fixedAlgorithm">ALGORITHM
+      <label v-if="!fixedAlgorithm && !studentOnly">ALGORITHM
         <select v-model="algorithm">
           <option v-for="entry in SORT_ALGORITHMS" :key="entry.id" :value="entry.id">{{ entry.label }}</option>
         </select>
       </label>
-      <label>ITEMS {{ size }}
+      <label v-if="!studentOnly">ITEMS {{ size }}
         <input v-model.number="size" type="range" min="6" max="40" @input="shuffle" />
       </label>
-      <button class="btn is-ghost" @click="shuffle">Shuffle</button>
+      <button v-if="!studentOnly" class="btn is-ghost" @click="shuffle">Shuffle</button>
       <strong v-if="fixedAlgorithm" class="algorithm-name">{{ algorithmInfo.label }}</strong>
       <span v-if="usingStudentCode" class="your-code">PLAYING YOUR CODE</span>
-      <span class="complexity">{{ algorithmInfo.complexity }}</span>
+      <span v-if="!studentOnly" class="complexity">{{ algorithmInfo.complexity }}</span>
     </div>
 
     <div class="stage">

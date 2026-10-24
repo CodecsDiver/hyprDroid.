@@ -5,6 +5,7 @@ import { useUiStore } from '../stores/uiStore'
 import { useWorkspaceStore } from '../stores/workspaceStore'
 import type { AppCommand } from './commandRegistry'
 import { requestDelete, requestNewFile, requestRename } from './fileActions'
+import { visualizeActiveFile } from './visualizeAction'
 import { downloadTextFile, pickTextFile } from './fileTransfer'
 
 export interface CommandContext {
@@ -61,8 +62,8 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
       run: () => downloadTextFile(workspace.activeFileName, workspace.code),
       isEnabled: () => !isNativeRuntime(),
     },
-    { id: 'file.rename', title: 'Rename current file...', category: 'File', shortcuts: ['F2'], run: () => requestRename(workspace.activeFileName), isEnabled: () => workspace.activeFileName !== MAIN_FILE_NAME },
-    { id: 'file.delete', title: 'Delete current file...', category: 'File', run: () => requestDelete(workspace.activeFileName), isEnabled: () => workspace.activeFileName !== MAIN_FILE_NAME },
+    { id: 'file.rename', title: 'Rename current file...', category: 'File', shortcuts: ['F2'], run: () => requestRename(workspace.activeFileName), isEnabled: () => !workspace.isProtectedFile(workspace.activeFileName) },
+    { id: 'file.delete', title: 'Delete current file...', category: 'File', run: () => requestDelete(workspace.activeFileName), isEnabled: () => !workspace.isProtectedFile(workspace.activeFileName) },
     { id: 'file.reset', title: 'Reset main.py to starter code...', category: 'File', run: resetMission },
     { id: 'file.lab', title: 'Open Visualizer Lab', category: 'File', shortcuts: ['Ctrl+Alt+L'], run: () => context.openLab() },
     { id: 'file.close', title: 'Close window', category: 'File', run: () => context.closeWindow(), isEnabled: () => isNativeRuntime() },
@@ -104,6 +105,7 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
 
     { id: 'run.run', title: 'Run', category: 'Run', shortcuts: ['Ctrl+Enter'], run: () => void workspace.run(), isEnabled: () => !workspace.isBusy },
     { id: 'run.check', title: 'Check my work', category: 'Run', shortcuts: ['Ctrl+Shift+Enter'], run: () => void workspace.checkWork(), isEnabled: () => !workspace.isBusy },
+    { id: 'run.visualize', title: 'Visualize this file (animate the list it sorts)', category: 'Run', run: () => visualizeActiveFile(), isEnabled: () => !workspace.isBusy },
     { id: 'run.clear', title: 'Clear output', category: 'Run', run: () => workspace.clearOutput() },
 
     { id: 'go.next', title: 'Next mission', category: 'Go', run: () => void workspace.goToMissionOffset(1) },

@@ -3,9 +3,11 @@ import { computed } from 'vue'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { MAX_STRIKES } from '../../practice/strikes'
 import { usePracticeStore } from '../../stores/practiceStore'
+import { visualizeActiveFile } from '../../commands/visualizeAction'
 import FileTabs from './FileTabs.vue'
 
 const workspace = useWorkspaceStore()
+const visualizeNow = () => visualizeActiveFile()
 const practice = usePracticeStore()
 const strikes = computed(() => practice.strikesFor(workspace.selectedProjectId))
 const canViewSolution = computed(() => practice.canViewSolution(workspace.selectedProjectId))
@@ -39,7 +41,10 @@ const saveState = computed(() => {
     <button class="btn is-green" :disabled="workspace.isBusy" @click="workspace.run()">
       <span class="glyph">&#9654;</span> Run <span class="kbd on-color">Ctrl+Enter</span>
     </button>
-    <button class="btn is-violet is-hero" :disabled="workspace.isBusy" @click="workspace.checkWork()">
+    <button class="btn is-ghost" :disabled="workspace.isBusy" title="Run this file and animate the first list of numbers it changes (Run menu)" @click="visualizeNow()">
+      &#9672; Visualize
+    </button>
+    <button class="btn is-violet is-hero" :disabled="workspace.isBusy || workspace.isFreeCode" :title="workspace.isFreeCode ? 'Free Code has nothing to check. Pick a mission to be checked.' : ''" @click="workspace.checkWork()">
       <span class="glyph">&#10022;</span> {{ workspace.isChecking ? 'Verifying...' : 'Check my work' }}
     </button>
   </div>

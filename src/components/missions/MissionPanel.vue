@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FREE_CODE_ID } from '../../curriculum/freeCode'
 import { PROJECTS } from '../../curriculum/projects'
 import { objectiveXp } from '../../gamification/progressionEngine'
 import { useProgressionStore } from '../../stores/progressionStore'
@@ -17,6 +18,12 @@ const difficultyBars = (difficulty: number) => Array.from({ length: 5 }, (_, ind
 
 <template>
   <aside class="missions panel">
+    <div class="panel-title">Workspace</div>
+    <button class="free-code" :class="{ selected: workspace.isFreeCode }" @click="workspace.selectProject(FREE_CODE_ID)">
+      <span class="free-title">&#9998; Free Code</span>
+      <span class="free-tagline">Your own programs. Any file, no checks.</span>
+    </button>
+
     <div class="panel-title">Missions</div>
 
     <ul class="project-list">
@@ -42,7 +49,7 @@ const difficultyBars = (difficulty: number) => Array.from({ length: 5 }, (_, ind
       </li>
     </ul>
 
-    <div class="panel-title">Objectives</div>
+    <div class="panel-title">{{ workspace.isFreeCode ? 'About Free Code' : 'Objectives' }}</div>
     <div class="objectives">
       <p class="summary">{{ workspace.selectedProject.summary }}</p>
       <div
@@ -113,4 +120,11 @@ const difficultyBars = (difficulty: number) => Array.from({ length: 5 }, (_, ind
 .objective.failed { border-color: var(--neon-red); background: rgb(var(--neon-red-rgb) / 0.07); }
 .objective.failed .checkbox { background: var(--neon-red); border-color: var(--neon-red); }
 .why { color: var(--neon-red); }
+.free-code {
+  display: flex; flex-direction: column; gap: 3px; width: calc(100% - 20px); margin: 8px 10px; padding: 10px 12px; text-align: left; cursor: pointer;
+  background: rgb(var(--neon-violet-rgb) / 0.08); border: 1px solid rgb(var(--neon-violet-rgb) / 0.4);
+}
+.free-code:hover, .free-code.selected { border-color: var(--neon-violet); box-shadow: var(--glow-violet); }
+.free-title { font-family: var(--font-display); letter-spacing: 0.12em; color: var(--neon-violet); font-size: 13px; }
+.free-tagline { font-size: 11px; color: var(--text-dim); }
 </style>

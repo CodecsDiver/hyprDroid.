@@ -15,10 +15,13 @@ import {
   type SandboxStatus,
 } from '../backend/backend'
 import { buildCheckSource, parseCheckOutput } from '../curriculum/harness'
-import { normalizeNewFileName, sortFileNames, validateNewFileName } from '../curriculum/fileNames'
+import { FREE_CODE_ID, findWorkspace } from '../curriculum/freeCode'
+import { normalizeNewFileName, RESERVED_FILE_NAMES, sortFileNames, validateNewFileName } from '../curriculum/fileNames'
 import { findProject, MAIN_FILE_NAME, PROJECTS } from '../curriculum/projects'
 import type { ObjectiveResult } from '../curriculum/types'
+import type { SortFrame } from '../visualizers/algorithms/sorting'
 import { emitJuice } from '../juice/juiceBus'
+import { buildTraceRunnerSource, parseTraceOutput, TRACE_RUNNER_FILE_NAME } from '../lab/traceRunner'
 import { MAX_STRIKES } from '../practice/strikes'
 import { usePracticeStore } from './practiceStore'
 import { useProgressionStore } from './progressionStore'
@@ -60,7 +63,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   let autosaveTimer: ReturnType<typeof setTimeout> | undefined
   let lastRewardedSaveCode = ''
 
-  const selectedProject = computed(() => findProject(selectedProjectId.value) ?? PROJECTS[0])
+  const selectedProject = computed(() => findWorkspace(selectedProjectId.value) ?? PROJECTS[0])
+  const isFreeCode = computed(() => selectedProjectId.value === FREE_CODE_ID)
+  /** Mission files the checks depend on cannot be renamed or deleted; the free workspace has none. */
+  const isProtectedFile = (fileName: string) => !isFreeCode.value && fileName === MAIN_FILE_NAME
+  const listVisibleFiles = async (projectId: string) =>
+    (await listProjectFiles(projectId).catch(() => [] as string[])).filter((name) => !RESERVED_FILE_NAMES.includes(name))
   const isDirty = computed(() => code.value !== savedCode.value)
   const isBusy = computed(() => isRunning.value || isChecking.value)
   const metObjectiveCount = computed(
@@ -75,19 +83,24 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function selectProject(projectId: string): Promise<void> {
     if (isProjectLoaded.value && isDirty.value) await save({ manual: false })
     clearTimeout(autosaveTimer)
-    const project = findProject(projectId) ?? PROJECTS[0]
+    const project = findWorkspace(projectId) ?? PROJECTS[0]
     selectedProjectId.value = project.id
     isProjectLoaded.value = false
     output.value = { kind: 'empty' }
     objectiveResults.value = {}
     saveError.value = null
     try {
-      activeFileName.value = MAIN_FILE_NAME
-      const existing = await readProjectFile(project.id, MAIN_FILE_NAME)
+      const existingFiles = await listVisibleFiles(project.id)
+      // A mission always has main.py. The free workspace opens main.py if it still exists, otherwise its first file.
+      const openName = project.id === FREE_CODE_ID && !existingFiles.includes(MAIN_FILE_NAME) && existingFiles.length > 0
+        ? sortFileNames(existingFiles)[0]
+        : MAIN_FILE_NAME
+      activeFileName.value = openName
+      const existing = await readProjectFile(project.id, openName)
       code.value = existing ?? project.starterCode
       savedCode.value = existing ?? ''
       if (existing === null) await save({ manual: false })
-      fileNames.value = sortFileNames([MAIN_FILE_NAME, ...(await listProjectFiles(project.id).catch(() => []))])
+      fileNames.value = sortFileNames([openName, ...existingFiles])
     } catch (error) {
       saveError.value = toBackendError(error)
       code.value = project.starterCode
@@ -142,7 +155,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function renameFile(fromName: string, rawNewName: string): Promise<string | null> {
-    if (fromName === MAIN_FILE_NAME) return `${MAIN_FILE_NAME} is checked by the mission and cannot be renamed`
+    if (isProtectedFile(fromName)) return `${MAIN_FILE_NAME} is checked by the mission and cannot be renamed`
     const problem = validateNewFileName(rawNewName, fileNames.value)
     if (problem) return problem
     if (fromName === activeFileName.value && !(await flushActiveFile())) return 'Could not save the file first'
@@ -158,7 +171,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function deleteFile(fileName: string): Promise<string | null> {
-    if (fileName === MAIN_FILE_NAME) return `${MAIN_FILE_NAME} is checked by the mission and cannot be deleted`
+    if (isProtectedFile(fileName)) return `${MAIN_FILE_NAME} is checked by the mission and cannot be deleted`
+    if (fileNames.value.length <= 1) return 'A workspace needs at least one file. Create another one first.'
     try {
       await deleteProjectFile(selectedProjectId.value, fileName)
     } catch (error) {
@@ -168,13 +182,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     fileNames.value = fileNames.value.filter((name) => name !== fileName)
     if (wasActive) {
       savedCode.value = code.value
-      await openFile(MAIN_FILE_NAME).catch(() => undefined)
-      if (activeFileName.value === fileName) activeFileName.value = MAIN_FILE_NAME
+      const fallback = fileNames.value.includes(MAIN_FILE_NAME) ? MAIN_FILE_NAME : fileNames.value[0]
+      await openFile(fallback).catch(() => undefined)
+      if (activeFileName.value === fileName) activeFileName.value = fallback
     }
     return null
   }
 
   async function resetToStarter(): Promise<void> {
+    if (!fileNames.value.includes(MAIN_FILE_NAME)) return
     await openFile(MAIN_FILE_NAME)
     updateCode(selectedProject.value.starterCode)
   }
@@ -281,8 +297,44 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  /**
+   * Runs the active file under the tracer and returns the steps taken by the first list of numbers it changed.
+   * Returns null (after reporting why) when the program never changed such a list.
+   */
+  async function visualize(): Promise<SortFrame[] | null> {
+    if (isBusy.value) return null
+    isRunning.value = true
+    try {
+      if (!(await save({ manual: false }))) return null
+      const projectId = selectedProjectId.value
+      await writeProjectFile(projectId, TRACE_RUNNER_FILE_NAME, buildTraceRunnerSource('auto', activeFileName.value))
+      const outcome = await withContainment((allow) => runPython(projectId, TRACE_RUNNER_FILE_NAME, allow))
+      if (!outcome) return null
+      const frames = parseTraceOutput(outcome.stdout)
+      if (!frames) {
+        output.value = { kind: 'run', outcome }
+        reportError({
+          code: 'visualize',
+          message: outcome.exitCode === 0
+            ? `${activeFileName.value} ran, but no list of numbers (up to 40) changed while it ran, so there is nothing to animate. Try a sort that rearranges a list in place.`
+            : `${activeFileName.value} stopped with an error before a list could be animated. Fix it with Run first.`,
+        })
+      }
+      return frames
+    } catch (error) {
+      reportError(toBackendError(error))
+      return null
+    } finally {
+      isRunning.value = false
+    }
+  }
+
   async function checkWork(): Promise<void> {
     if (isBusy.value) return
+    if (isFreeCode.value) {
+      output.value = { kind: 'error', error: { code: 'free-code', message: 'Free Code has no objectives to check. Pick a mission on the left to be checked, or just press Run.' } }
+      return
+    }
     isChecking.value = true
     emitJuice({ kind: 'run-started' })
     const project = selectedProject.value
@@ -355,7 +407,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   return {
-    selectedProjectId, selectedProject, code, savedCode, fileNames, activeFileName, isDirty, isProjectLoaded, lastSavedAt, saveError,
+    selectedProjectId, selectedProject, isFreeCode, isProtectedFile, visualize, code, savedCode, fileNames, activeFileName, isDirty, isProjectLoaded, lastSavedAt, saveError,
     isSaving, isRunning, isChecking, isBusy, output, objectiveResults, sandbox, consentRequest,
     metObjectiveCount, initialize, selectProject, openFile, createFile, renameFile, deleteFile, resetToStarter, clearOutput, reportError, goToMissionOffset, updateCode, save, run, checkWork, answerConsent,
   }

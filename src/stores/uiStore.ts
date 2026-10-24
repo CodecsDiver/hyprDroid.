@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { SortFrame } from '../visualizers/algorithms/sorting'
 
 export type DialogRequest =
   | { kind: 'confirm'; title: string; message: string; confirmLabel: string; resolve: (confirmed: boolean) => void }
@@ -12,6 +13,7 @@ export type DialogRequest =
       validate: (value: string) => string | null
       resolve: (value: string | null) => void
     }
+  | { kind: 'visualize'; fileName: string; frames: SortFrame[] }
   | { kind: 'about' }
   | { kind: 'shortcuts' }
 
@@ -50,6 +52,7 @@ export const useUiStore = defineStore('ui', () => {
     closeThemeEditor: () => (isThemeEditorOpen.value = false),
     openPalette: () => (isPaletteOpen.value = true),
     closePalette: () => (isPaletteOpen.value = false),
+    showVisualization: (fileName: string, frames: SortFrame[]) => (dialog.value = { kind: 'visualize', fileName, frames }),
     showAbout: () => (dialog.value = { kind: 'about' }),
     showShortcuts: () => (dialog.value = { kind: 'shortcuts' }),
   }

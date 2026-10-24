@@ -1,5 +1,4 @@
 import { validateNewFileName } from '../curriculum/fileNames'
-import { MAIN_FILE_NAME } from '../curriculum/projects'
 import { useUiStore } from '../stores/uiStore'
 import { useWorkspaceStore } from '../stores/workspaceStore'
 
@@ -21,9 +20,9 @@ export async function requestNewFile(): Promise<void> {
 }
 
 export async function requestRename(fileName: string): Promise<void> {
-  if (fileName === MAIN_FILE_NAME) return
   const ui = useUiStore()
   const workspace = useWorkspaceStore()
+  if (workspace.isProtectedFile(fileName)) return
   const name = await ui.prompt({
     title: `Rename ${fileName}`,
     label: 'New name',
@@ -37,10 +36,10 @@ export async function requestRename(fileName: string): Promise<void> {
 }
 
 export async function requestDelete(fileName: string): Promise<void> {
-  if (fileName === MAIN_FILE_NAME) return
   const ui = useUiStore()
   const workspace = useWorkspaceStore()
-  const confirmed = await ui.confirm('Delete file?', `${fileName} will be permanently deleted from this mission. This cannot be undone.`, 'Delete')
+  if (workspace.isProtectedFile(fileName)) return
+  const confirmed = await ui.confirm('Delete file?', `${fileName} will be permanently deleted from this workspace. This cannot be undone.`, 'Delete')
   if (!confirmed) return
   const problem = await workspace.deleteFile(fileName)
   if (problem) workspace.reportError({ code: 'delete-file', message: problem })

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { requestDelete, requestNewFile, requestRename } from '../../commands/fileActions'
-import { MAIN_FILE_NAME } from '../../curriculum/projects'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 
 const workspace = useWorkspaceStore()
@@ -21,7 +20,7 @@ const workspace = useWorkspaceStore()
       <span class="tab-icon">PY</span>
       <span class="tab-name">{{ name }}</span>
       <span v-if="name === workspace.activeFileName && workspace.isDirty" class="dirty-dot" title="Unsaved changes" />
-      <span v-if="name !== MAIN_FILE_NAME" class="tab-actions">
+      <span v-if="!workspace.isProtectedFile(name)" class="tab-actions">
         <button class="tab-action" title="Rename" @click.stop="requestRename(name)">&#9998;</button>
         <button class="tab-action danger" title="Delete" @click.stop="requestDelete(name)">&#10005;</button>
       </span>
