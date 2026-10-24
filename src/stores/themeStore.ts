@@ -24,7 +24,9 @@ export const useThemeStore = defineStore('theme', () => {
   const isLoaded = ref(false)
 
   let channel: BroadcastChannel | null = null
-  let isApplyingRemote = false
+  /** The last document sent or received. Equal documents are never sent again, so two windows cannot echo forever. */
+  let lastSerialized = ''
+  const serialize = () => JSON.stringify({ overrides: overrides.value, activeName: activeName.value, saved: saved.value })
 
   function applyToPage(): void {
     applyThemeOverrides(document.documentElement, overrides.value)
@@ -57,10 +59,9 @@ export const useThemeStore = defineStore('theme', () => {
     if (typeof BroadcastChannel !== 'undefined') {
       channel = new BroadcastChannel(CHANNEL_NAME)
       channel.onmessage = (event: MessageEvent) => {
-        isApplyingRemote = true
         overrides.value = sanitizeOverrides(event.data?.overrides)
         if (typeof event.data?.activeName === 'string') activeName.value = event.data.activeName.slice(0, 60)
-        isApplyingRemote = false
+        lastSerialized = serialize()
       }
     }
     isLoaded.value = true
@@ -68,7 +69,10 @@ export const useThemeStore = defineStore('theme', () => {
 
   watch([overrides, activeName, saved], () => {
     applyToPage()
-    if (!isLoaded.value || isApplyingRemote) return
+    if (!isLoaded.value) return
+    const serialized = serialize()
+    if (serialized === lastSerialized) return
+    lastSerialized = serialized
     try {
       channel?.postMessage({ overrides: { ...overrides.value }, activeName: activeName.value })
     } catch (error) {

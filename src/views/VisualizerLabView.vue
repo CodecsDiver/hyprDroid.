@@ -10,6 +10,8 @@ import { LAB_COURSES, findCourse } from '../lab/courses'
 import { LAB_REPLAY_KEY } from '../lab/replay'
 import { evaluateTyping, splitCode } from '../lab/typingCourse'
 import { PANEL_LIMITS } from '../layout/resize'
+import { formatMs } from '../ghost/ghostRecord'
+import { usePracticeStore } from '../stores/practiceStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useUiStore } from '../stores/uiStore'
 import type { SortFrame } from '../visualizers/algorithms/sorting'
@@ -17,6 +19,7 @@ import type { SortFrame } from '../visualizers/algorithms/sorting'
 const settings = useSettingsStore()
 const theme = useThemeStore()
 const ui = useUiStore()
+const practice = usePracticeStore()
 const SELECTED_COURSE_KEY = 'pydisc-lab-course'
 const CELEBRATION_MS = 3600
 
@@ -90,8 +93,11 @@ async function onRan(result: { courseId: string; matched: boolean; frames: SortF
   }, CELEBRATION_MS)
 }
 
+const racingCourseId = ref<string | null>(null)
+
 function select(courseId: string): void {
   selectedCourseId.value = courseId
+  racingCourseId.value = null
   traceFrames.value = null
   celebration.value = null
   try {
@@ -113,6 +119,7 @@ const typingMax = computed(() => Math.max(PANEL_LIMITS.outputMin, windowHeight.v
 onMounted(async () => {
   await settings.load()
   await theme.load()
+  await practice.load()
   window.addEventListener('resize', onResize)
   await loadCompletionMarks()
 })
@@ -146,6 +153,7 @@ onBeforeUnmount(() => {
                 <span class="title">{{ course.title }}</span>
                 <span class="tagline">{{ course.tagline }}</span>
               </span>
+              <span v-if="practice.ghostFor(`lab:${course.id}`)" class="best-time" title="Your ghost's time">&#9201; {{ formatMs(practice.ghostFor(`lab:${course.id}`)!.ms) }}</span>
             </li>
           </ul>
         </div>
@@ -163,7 +171,9 @@ onBeforeUnmount(() => {
 
       <main class="main" :style="{ gridTemplateRows: `minmax(120px, 1fr) 12px ${settings.layout.labTypingHeight}px` }">
         <section class="viz panel" data-theme-part="visualizer">
-          <div class="panel-title">{{ selectedCourse.title }}<span v-if="isCompleted(selectedCourse.id)" class="done-badge">COMPLETE</span></div>
+          <div class="panel-title">{{ selectedCourse.title }}<span v-if="isCompleted(selectedCourse.id)" class="done-badge">COMPLETE</span>
+            <button v-if="isCompleted(selectedCourse.id) && racingCourseId !== selectedCourse.id" class="race-btn" title="Type it again against your fastest run" @click="racingCourseId = selectedCourse.id">&#9654; RACE GHOST</button>
+          </div>
           <Transition name="celebrate">
             <div v-if="celebration" :key="celebration.id" class="celebration">
               <div class="celebration-headline">{{ celebration.headline }}</div>
@@ -190,8 +200,10 @@ onBeforeUnmount(() => {
           data-theme-part="editor"
           :course="selectedCourse"
           :font-size="Math.min(settings.editorFontSize, 17)"
+          :race="racingCourseId === selectedCourse.id"
           @completion="setCompleted"
           @ran="onRan"
+          @race-ended="racingCourseId = null"
         />
       </main>
     </div>
@@ -229,4 +241,10 @@ onBeforeUnmount(() => {
 .celebrate-leave-active { transition: opacity 0.5s, transform 0.5s; }
 .celebrate-leave-to { opacity: 0; transform: translateX(-50%) translateY(-14px); }
 @keyframes celebrate-in { from { opacity: 0; transform: translateX(-50%) scale(calc(1 + 0.6 * var(--fx-scale))); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+.best-time { margin-left: auto; align-self: center; font-size: 10px; letter-spacing: 0.1em; color: var(--neon-violet); white-space: nowrap; }
+.race-btn {
+  margin-left: 12px; padding: 1px 9px; font-size: 10px; letter-spacing: 0.16em; cursor: pointer;
+  background: rgb(var(--neon-violet-rgb) / 0.12); border: 1px solid var(--neon-violet); color: var(--neon-violet);
+}
+.race-btn:hover { box-shadow: var(--glow-violet); }
 </style>

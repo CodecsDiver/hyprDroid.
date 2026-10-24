@@ -1,24 +1,34 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { readProjectFile, runPython, toBackendError, writeProjectFile, type BackendError, type RunOutcome } from '../../backend/backend'
+import { formatDelta, formatMs, ghostTextAt, RunRecorder, type GhostVerdict } from '../../ghost/ghostRecord'
+import { emitJuice } from '../../juice/juiceBus'
+import { usePracticeStore } from '../../stores/practiceStore'
 import CodeEditor from '../editor/CodeEditor.vue'
+import CountdownBanner from '../shell/CountdownBanner.vue'
 import { LINES_PER_CHUNK, chunkCount, chunkLines, evaluateTyping, splitCode } from '../../lab/typingCourse'
 import type { LabCourse } from '../../lab/courses'
 import { TRACE_RUNNER_FILE_NAME, buildTraceRunnerSource, parseTraceOutput } from '../../lab/traceRunner'
 import type { SortFrame } from '../../visualizers/algorithms/sorting'
 
-const props = defineProps<{ course: LabCourse; fontSize: number }>()
+const props = defineProps<{ course: LabCourse; fontSize: number; /** Racing this course's ghost in a separate practice file. */ race?: boolean }>()
 const emit = defineEmits<{
   /** The typed file for this course is (or stopped being) completely correct. */
   completion: [courseId: string, isComplete: boolean]
   /** Run finished. `matched` = output equals the expected output; `frames` = steps recorded from the student's own code. */
   ran: [result: { courseId: string; matched: boolean; frames: SortFrame[] | null }]
+  /** The student left the race. */
+  raceEnded: []
 }>()
 
 const FILE_NAME = 'main.py'
 const AUTOSAVE_DELAY_MS = 600
 
-const projectId = computed(() => `lab-${props.course.id}`)
+const practice = usePracticeStore()
+const folderFor = (courseId: string, racing: boolean) => (racing ? `ghost-lab-${courseId}` : `lab-${courseId}`)
+const projectId = computed(() => folderFor(props.course.id, !!props.race))
+/** The folder whose file is currently loaded, so switching courses or modes saves to the right place. */
+let loadedFolder = ''
 const expectedLines = computed(() => splitCode(props.course.code))
 const totalChunks = computed(() => chunkCount(expectedLines.value.length))
 
@@ -36,6 +46,69 @@ const editor = ref<InstanceType<typeof CodeEditor>>()
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 let loadToken = 0
 let previousUnlocked = 1
+
+// --- timing and the ghost ---------------------------------------------------------------------------
+type RacePhase = 'idle' | 'countdown' | 'racing' | 'done'
+const ghostKey = computed(() => `lab:${props.course.id}`)
+const racePhase = ref<RacePhase>('idle')
+const raceNow = ref(Date.now())
+const raceFinalMs = ref(0)
+const raceVerdict = ref<GhostVerdict | null>(null)
+const ghostTimeBefore = ref<number | null>(null)
+const racedGhost = ref(practice.ghostFor(`lab:${props.course.id}`))
+let recorder: RunRecorder | null = null
+let raceTicker: ReturnType<typeof setInterval> | undefined
+
+const yourMs = computed(() => (racePhase.value === 'done' ? raceFinalMs.value : raceNow.value >= 0 ? (recorder?.elapsed(raceNow.value) ?? 0) : 0))
+const ghostMatchedLines = computed(() =>
+  racedGhost.value ? evaluateTyping(expectedLines.value, ghostTextAt(racedGhost.value, yourMs.value)).matchedLines : 0,
+)
+const ghostFraction = computed(() => ghostMatchedLines.value / expectedLines.value.length)
+const isEditorLocked = computed(() => !!props.race && racePhase.value !== 'racing')
+
+function stopTicker(): void {
+  clearInterval(raceTicker)
+}
+
+function beginRace(): void {
+  racedGhost.value = practice.ghostFor(ghostKey.value)
+  ghostTimeBefore.value = racedGhost.value?.ms ?? null
+  raceVerdict.value = null
+  recorder = null
+  racePhase.value = 'countdown'
+}
+
+function goRace(): void {
+  recorder = new RunRecorder('')
+  racePhase.value = 'racing'
+  raceNow.value = Date.now()
+  stopTicker()
+  raceTicker = setInterval(() => (raceNow.value = Date.now()), 100)
+  editor.value?.focus()
+}
+
+/** Called once the whole file is typed correctly: stores the run as the ghost if it is the first or the fastest. */
+function finishTimedRun(): void {
+  const record = recorder?.finish(ghostKey.value, Date.now())
+  recorder = null
+  stopTicker()
+  if (!record) return
+  const verdict = practice.submitRun(record)
+  if (props.race) {
+    raceFinalMs.value = record.ms
+    raceVerdict.value = verdict
+    racePhase.value = 'done'
+  }
+  const beatGhost = ghostTimeBefore.value === null || record.ms < ghostTimeBefore.value
+  if (verdict === 'slower' && !props.race) return
+  emitJuice({
+    kind: 'banner',
+    tone: verdict === 'slower' ? 'cyan' : 'amber',
+    headline: verdict === 'first' ? 'GHOST CREATED' : verdict === 'faster' ? (props.race ? 'YOU BEAT THE GHOST' : 'NEW GHOST: FASTER RUN') : 'THE GHOST WINS',
+    detail: `${props.course.title}: ${formatMs(record.ms)}`,
+  })
+  if (verdict !== 'slower' && (beatGhost || !props.race)) emitJuice({ kind: 'celebrate', scale: props.race ? 2 : 1 })
+}
 
 const evaluation = computed(() => evaluateTyping(expectedLines.value, typedText.value))
 /** The chunk being typed right now (zero-based). */
@@ -62,10 +135,18 @@ async function loadFile(): Promise<void> {
   runError.value = null
   saveError.value = null
   confirmingRestart.value = false
+  stopTicker()
+  racePhase.value = 'idle'
+  recorder = null
+  const folder = projectId.value
   try {
-    const stored = await readProjectFile(projectId.value, FILE_NAME)
+    // A race always starts from an empty file; a normal visit continues where the student left off.
+    const stored = props.race ? null : await readProjectFile(folder, FILE_NAME)
     if (token !== loadToken) return
     typedText.value = stored ?? ''
+    // Only a file that starts empty has an honest start time, so only those visits are timed.
+    recorder = !props.race && typedText.value === '' ? new RunRecorder('') : null
+    if (props.race) await writeProjectFile(folder, FILE_NAME, '')
   } catch (error) {
     if (token !== loadToken) return
     saveError.value = toBackendError(error)
@@ -74,7 +155,9 @@ async function loadFile(): Promise<void> {
   previousUnlocked = evaluateTyping(expectedLines.value, typedText.value).unlockedChunks
   justUnlockedChunk.value = null
   loadedCourseId.value = courseId
+  loadedFolder = folder
   isLoaded.value = true
+  if (props.race) beginRace()
 }
 
 async function saveNow(forProjectId = projectId.value, text = typedText.value): Promise<void> {
@@ -88,20 +171,29 @@ async function saveNow(forProjectId = projectId.value, text = typedText.value): 
 }
 
 function onTyped(text: string): void {
+  if (isEditorLocked.value) return
   typedText.value = text
+  recorder?.change(text, Date.now())
   runOutcome.value = null
   clearTimeout(saveTimer)
   saveTimer = setTimeout(saveNow, AUTOSAVE_DELAY_MS)
 }
 
 watch(
-  () => props.course.id,
-  async (_newId, oldId) => {
-    // Flush the previous course's file under ITS id before loading the new one.
-    if (oldId !== undefined && isLoaded.value) await saveNow(`lab-${oldId}`, typedText.value)
+  () => [props.course.id, !!props.race] as const,
+  async () => {
+    // Flush the previous course's file into ITS folder before loading the new one.
+    if (loadedFolder && isLoaded.value && !loadedFolder.startsWith('ghost-')) await saveNow(loadedFolder, typedText.value)
     await loadFile()
   },
   { immediate: true },
+)
+
+watch(
+  () => evaluation.value.isComplete,
+  (complete) => {
+    if (complete && isLoaded.value && recorder) finishTimedRun()
+  },
 )
 
 watch(
@@ -129,7 +221,7 @@ watch(
 watch(
   () => [isLoaded.value, loadedCourseId.value === props.course.id, evaluation.value.isComplete] as const,
   ([loaded, isCurrent, complete]) => {
-    if (loaded && isCurrent) emit('completion', props.course.id, complete)
+    if (loaded && isCurrent && !props.race) emit('completion', props.course.id, complete)
   },
   { immediate: true },
 )
@@ -173,6 +265,7 @@ async function restart(): Promise<void> {
     return
   }
   typedText.value = ''
+  recorder = new RunRecorder('')
   confirmingRestart.value = false
   runOutcome.value = null
   previousUnlocked = 1
@@ -182,7 +275,8 @@ async function restart(): Promise<void> {
 
 onBeforeUnmount(() => {
   clearTimeout(saveTimer)
-  void saveNow()
+  stopTicker()
+  if (!props.race) void saveNow()
 })
 </script>
 
@@ -197,9 +291,21 @@ onBeforeUnmount(() => {
         <div class="progress-fill" :style="{ transform: `scaleX(${progressFraction})` }" />
       </div>
       <span class="lines">{{ evaluation.matchedLines }} / {{ expectedLines.length }} lines</span>
-      <button class="btn is-green" :disabled="!evaluation.isComplete || isRunning" @click="run">&#9654; {{ isRunning ? 'Running...' : 'Run & check my work' }}</button>
-      <button class="btn is-ghost" @click="restart">{{ confirmingRestart ? 'Click again to wipe' : 'Start over' }}</button>
+      <template v-if="race">
+        <span class="race-clock">YOU <b>{{ formatMs(yourMs) }}</b></span>
+        <span class="race-clock ghost">GHOST <b>{{ racedGhost ? formatMs(racedGhost.ms) : 'none yet' }}</b></span>
+        <button class="btn is-ghost" @click="emit('raceEnded')">Leave race</button>
+      </template>
+      <template v-else>
+        <span v-if="recorder" class="race-clock" title="Timed from your first keystroke. Finish the file and this run can become your ghost.">TIME <b>{{ formatMs(yourMs) }}</b></span>
+        <button class="btn is-green" :disabled="!evaluation.isComplete || isRunning" @click="run">&#9654; {{ isRunning ? 'Running...' : 'Run & check my work' }}</button>
+        <button class="btn is-ghost" @click="restart">{{ confirmingRestart ? 'Click again to wipe' : 'Start over' }}</button>
+      </template>
     </header>
+    <div v-if="race && racedGhost && racePhase === 'racing'" class="ghost-track" :title="`Ghost: ${ghostMatchedLines} of ${expectedLines.length} lines`">
+      <i class="ghost-lines" :style="{ transform: `scaleX(${ghostFraction})` }" />
+      <span>GHOST {{ ghostMatchedLines }} / {{ expectedLines.length }} lines &middot; YOU {{ evaluation.matchedLines }}</span>
+    </div>
 
     <div class="body">
       <div class="reference" :class="{ 'just-unlocked': justUnlockedChunk !== null }">
@@ -244,10 +350,11 @@ onBeforeUnmount(() => {
       <div class="editor">
         <CodeEditor
           v-if="isLoaded"
-          :key="course.id"
+          :key="`${course.id}:${race ? 'race' : 'normal'}`"
           ref="editor"
           :model-value="typedText"
           :font-size="fontSize"
+          :read-only="isEditorLocked"
           :effects="false"
           plain-typing
           @update:model-value="onTyped"
@@ -255,6 +362,21 @@ onBeforeUnmount(() => {
         />
       </div>
     </div>
+
+    <div v-if="race && racePhase === 'done'" class="race-result">
+      <div class="race-verdict" :class="{ win: raceVerdict !== 'slower' }">
+        {{ raceVerdict === 'first' ? 'GHOST CREATED' : raceVerdict === 'faster' ? 'NEW RECORD' : 'THE GHOST HOLDS' }}
+      </div>
+      <div class="race-numbers">
+        <span>Your time <b>{{ formatMs(raceFinalMs) }}</b></span>
+        <span v-if="ghostTimeBefore !== null">Ghost was <b>{{ formatMs(ghostTimeBefore) }}</b> ({{ formatDelta(raceFinalMs - ghostTimeBefore) }})</span>
+      </div>
+      <div class="race-actions">
+        <button class="btn is-ghost" @click="emit('raceEnded')">Back to the lesson</button>
+        <button class="btn is-green" @click="loadFile()">Race again</button>
+      </div>
+    </div>
+    <CountdownBanner :active="race === true && racePhase === 'countdown'" @go="goRace" />
   </section>
 </template>
 
@@ -301,4 +423,17 @@ onBeforeUnmount(() => {
 .run-box pre { margin: 4px 0 0; white-space: pre-wrap; }
 .err { color: var(--neon-red); }
 .editor { min-width: 0; min-height: 0; }
+.typing { position: relative; }
+.race-clock { font-size: 10px; letter-spacing: 0.2em; color: var(--text-dim); white-space: nowrap; }
+.race-clock b { font-family: var(--font-display); font-size: 15px; color: var(--neon-green); }
+.race-clock.ghost b { color: var(--neon-violet); }
+.ghost-track { position: relative; height: 16px; background: rgb(var(--void-rgb) / 0.7); border-bottom: 1px solid rgb(var(--neon-violet-rgb) / 0.4); }
+.ghost-lines { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(90deg, rgb(var(--neon-violet-rgb) / 0.15), rgb(var(--neon-violet-rgb) / 0.65)); transition: transform 0.12s linear; }
+.ghost-track span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 10px; letter-spacing: 0.2em; color: var(--text); }
+.race-result { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgb(var(--void-rgb) / 0.9); }
+.race-verdict { font-family: var(--font-display); font-size: 40px; font-weight: 900; letter-spacing: 0.12em; color: var(--text-dim); }
+.race-verdict.win { color: var(--neon-amber); text-shadow: 0 0 calc(24px * var(--fx-scale)) var(--neon-amber), 0 0 calc(60px * var(--fx-scale)) var(--neon-red); }
+.race-numbers { display: flex; gap: 24px; }
+.race-numbers b { color: var(--neon-green); font-family: var(--font-display); }
+.race-actions { display: flex; gap: 12px; }
 </style>

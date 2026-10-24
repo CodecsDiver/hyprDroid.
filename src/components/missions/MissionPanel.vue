@@ -2,11 +2,16 @@
 import { FREE_CODE_ID } from '../../curriculum/freeCode'
 import { PROJECTS } from '../../curriculum/projects'
 import { objectiveXp } from '../../gamification/progressionEngine'
+import { formatMs } from '../../ghost/ghostRecord'
+import { usePracticeStore } from '../../stores/practiceStore'
 import { useProgressionStore } from '../../stores/progressionStore'
+import { useUiStore } from '../../stores/uiStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 
 const workspace = useWorkspaceStore()
 const progression = useProgressionStore()
+const practice = usePracticeStore()
+const ui = useUiStore()
 
 function projectProgress(projectId: string): number {
   const project = PROJECTS.find((candidate) => candidate.id === projectId)!
@@ -43,6 +48,12 @@ const difficultyBars = (difficulty: number) => Array.from({ length: 5 }, (_, ind
           <span v-else class="count">{{ projectProgress(project.id) }}/{{ project.objectives.length }}</span>
         </div>
         <div class="project-tagline">{{ project.tagline }}</div>
+        <div v-if="progression.hasCompletedProject(project.id)" class="replay-row">
+          <span class="best" :title="practice.ghostFor(`mission:${project.id}`) ? 'Your fastest run is the ghost' : 'No timed run yet: race to set the ghost'">
+            &#9201; {{ practice.ghostFor(`mission:${project.id}`) ? formatMs(practice.ghostFor(`mission:${project.id}`)!.ms) : 'no time yet' }}
+          </span>
+          <button class="race-button" @click.stop="ui.startRace(project.id)">&#9654; Race ghost</button>
+        </div>
         <div class="difficulty">
           <i v-for="(filled, index) in difficultyBars(project.difficulty)" :key="index" :class="{ filled }" />
         </div>
@@ -127,4 +138,11 @@ const difficultyBars = (difficulty: number) => Array.from({ length: 5 }, (_, ind
 .free-code:hover, .free-code.selected { border-color: var(--neon-violet); box-shadow: var(--glow-violet); }
 .free-title { font-family: var(--font-display); letter-spacing: 0.12em; color: var(--neon-violet); font-size: 13px; }
 .free-tagline { font-size: 11px; color: var(--text-dim); }
+.replay-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.best { font-size: 10px; letter-spacing: 0.12em; color: var(--neon-violet); }
+.race-button {
+  padding: 2px 8px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+  background: rgb(var(--neon-violet-rgb) / 0.12); border: 1px solid var(--neon-violet); color: var(--neon-violet);
+}
+.race-button:hover { box-shadow: var(--glow-violet); }
 </style>

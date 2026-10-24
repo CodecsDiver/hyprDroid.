@@ -22,6 +22,7 @@ import type { ObjectiveResult } from '../curriculum/types'
 import type { SortFrame } from '../visualizers/algorithms/sorting'
 import { emitJuice } from '../juice/juiceBus'
 import { buildTraceRunnerSource, parseTraceOutput, TRACE_RUNNER_FILE_NAME } from '../lab/traceRunner'
+import { formatMs, RunRecorder } from '../ghost/ghostRecord'
 import { MAX_STRIKES } from '../practice/strikes'
 import { usePracticeStore } from './practiceStore'
 import { useProgressionStore } from './progressionStore'
@@ -61,6 +62,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const consentRequest = ref<{ resolve: (approved: boolean) => void } | null>(null)
 
   let autosaveTimer: ReturnType<typeof setTimeout> | undefined
+  /** Times a mission typed from the starter code to its first pass, so the run can become a ghost. */
+  let recorder: RunRecorder | null = null
+  const isRecording = ref(false)
   let lastRewardedSaveCode = ''
 
   const selectedProject = computed(() => findWorkspace(selectedProjectId.value) ?? PROJECTS[0])
@@ -107,8 +111,20 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       fileNames.value = [MAIN_FILE_NAME]
     }
     lastRewardedSaveCode = savedCode.value
+    startRecording()
     isProjectLoaded.value = true
   }
+
+  /** Recording only makes sense from untouched starter code; a half-finished file has no honest start time. */
+  function startRecording(): void {
+    const canRecord = !isFreeCode.value && activeFileName.value === MAIN_FILE_NAME && code.value === selectedProject.value.starterCode
+    recorder = canRecord ? new RunRecorder(code.value) : null
+    isRecording.value = recorder !== null
+  }
+
+  /** Active milliseconds on the current recorded run, 0 when there is none. */
+  const runElapsedMs = () => recorder?.elapsed(Date.now()) ?? 0
+
 
   /** Saves the current file first so switching never loses edits. Returns false if that save failed. */
   async function flushActiveFile(): Promise<boolean> {
@@ -193,10 +209,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!fileNames.value.includes(MAIN_FILE_NAME)) return
     await openFile(MAIN_FILE_NAME)
     updateCode(selectedProject.value.starterCode)
+    startRecording()
   }
 
   function updateCode(newCode: string): void {
     if (newCode === code.value) return
+    if (activeFileName.value === MAIN_FILE_NAME) recorder?.change(newCode, Date.now())
     code.value = newCode
     clearTimeout(autosaveTimer)
     autosaveTimer = setTimeout(() => void save({ manual: false }), AUTOSAVE_DELAY_MS)
@@ -351,7 +369,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (!results) {
         objectiveResults.value = {}
         emitJuice({ kind: 'objective-failed' })
-        await takeStrike(project.id)
+        void takeStrike(project.id)
         return
       }
 
@@ -364,10 +382,35 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       }
       objectiveResults.value = resultsByObjective
       await revealResults(project.id, resultsByObjective)
-      if (project.objectives.some((objective) => resultsByObjective[objective.id].status !== 'pass')) await takeStrike(project.id)
+      if (project.objectives.some((objective) => resultsByObjective[objective.id].status !== 'pass')) void takeStrike(project.id)
     } finally {
       isChecking.value = false
     }
+  }
+
+  /**
+   * Checks a piece of code against a mission without touching the student's own files: the code is written to a
+   * separate practice folder. Used by Ghostcode races.
+   */
+  async function checkPracticeCopy(missionId: string, practiceCode: string): Promise<{ results: Record<string, ObjectiveResult> | null; detail: string }> {
+    const mission = findProject(missionId)
+    if (!mission) return { results: null, detail: 'Unknown mission.' }
+    const practiceFolder = `ghost-${mission.id}`
+    try {
+      await writeProjectFile(practiceFolder, MAIN_FILE_NAME, practiceCode)
+    } catch (error) {
+      return { results: null, detail: toBackendError(error).message }
+    }
+    const nonce = crypto.randomUUID()
+    const outcome = await withContainment((allow) => runChecks(practiceFolder, buildCheckSource(mission), nonce, allow))
+    if (!outcome) return { results: null, detail: output.value.kind === 'error' ? output.value.error.message : 'The checks could not run.' }
+    const parsed = parseCheckOutput(outcome.stdout, nonce)
+    if (!parsed) return { results: null, detail: (outcome.stderr || outcome.stdout || 'The checks could not report. Look for a syntax error.').slice(0, 400) }
+    const results: Record<string, ObjectiveResult> = {}
+    for (const objective of mission.objectives) {
+      results[objective.id] = parsed[`test_${objective.id}`] ?? { status: 'error', message: 'The test did not report a result.' }
+    }
+    return { results, detail: '' }
   }
 
   /** A failed Check my work costs one strike. The third one opens the full commented solution. */
@@ -380,6 +423,23 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       'Open the solution',
     )
     if (wantsSolution) await practice.openSolution(missionId)
+  }
+
+  /** The first all-green check after typing from the starter code is a timed run; it becomes the ghost if it is the fastest. */
+  function finishRecordedRun(missionId: string, title: string): void {
+    const record = recorder?.finish(`mission:${missionId}`, Date.now())
+    recorder = null
+    isRecording.value = false
+    if (!record) return
+    const verdict = practice.submitRun(record)
+    if (verdict === 'slower') return
+    emitJuice({
+      kind: 'banner',
+      tone: 'amber',
+      headline: verdict === 'first' ? 'GHOST CREATED' : 'NEW GHOST: FASTER RUN',
+      detail: `${title} in ${formatMs(record.ms)}. Replay it from the Missions panel to race yourself.`,
+    })
+    emitJuice({ kind: 'celebrate', scale: 1 })
   }
 
   async function revealResults(projectId: string, results: Record<string, ObjectiveResult>): Promise<void> {
@@ -403,11 +463,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       emitJuice({ kind: 'project-completed', title: project.title })
       progression.record({ type: 'project_completed', projectId: project.id, difficulty: project.difficulty })
     }
-    if (allPassed) practice.registerMissionCleared(project.id)
+    if (allPassed) {
+      practice.registerMissionCleared(project.id)
+      finishRecordedRun(project.id, project.title)
+    }
   }
 
   return {
-    selectedProjectId, selectedProject, isFreeCode, isProtectedFile, visualize, code, savedCode, fileNames, activeFileName, isDirty, isProjectLoaded, lastSavedAt, saveError,
+    isRecording, runElapsedMs, checkPracticeCopy, selectedProjectId, selectedProject, isFreeCode, isProtectedFile, visualize, code, savedCode, fileNames, activeFileName, isDirty, isProjectLoaded, lastSavedAt, saveError,
     isSaving, isRunning, isChecking, isBusy, output, objectiveResults, sandbox, consentRequest,
     metObjectiveCount, initialize, selectProject, openFile, createFile, renameFile, deleteFile, resetToStarter, clearOutput, reportError, goToMissionOffset, updateCode, save, run, checkWork, answerConsent,
   }

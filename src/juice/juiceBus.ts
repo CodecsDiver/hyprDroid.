@@ -11,6 +11,10 @@ export type JuiceEvent =
   | { kind: 'achievement-unlocked'; title: string }
   | { kind: 'level-up'; level: number; rank: string; rankChanged: boolean }
   | { kind: 'project-completed'; title: string }
+  /** A message from any game mode. */
+  | { kind: 'banner'; tone: 'green' | 'violet' | 'amber' | 'red' | 'cyan'; headline: string; detail: string }
+  /** A personal best (new ghost, race win). `scale` 1..3 sets how big the celebration is. */
+  | { kind: 'celebrate'; scale: 1 | 2 | 3 }
 
 type JuiceListener = (event: JuiceEvent) => void
 const listeners = new Set<JuiceListener>()

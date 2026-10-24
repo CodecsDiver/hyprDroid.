@@ -50,6 +50,9 @@ function handle(event: JuiceEvent): void {
     case 'project-completed':
       addBanner('violet', 'PROJECT CLEARED', event.title, 5200)
       break
+    case 'banner':
+      addBanner(event.tone, event.headline, event.detail, 4200)
+      break
     case 'xp-gained': {
       const id = ++counter
       floaters.value = [...floaters.value, { id, amount: event.amount }]

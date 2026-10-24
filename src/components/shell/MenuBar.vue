@@ -22,7 +22,7 @@ const MENUS: ReadonlyArray<{ label: string; entries: MenuEntry[] }> = [
       'view.sound', 'view.shake', '---', 'view.theme', 'view.resetLayout', 'view.fullscreen',
     ],
   },
-  { label: 'Run', entries: ['run.run', 'run.check', 'run.visualize', '---', 'run.clear'] },
+  { label: 'Run', entries: ['run.run', 'run.check', 'run.visualize', 'run.race', '---', 'run.clear'] },
   { label: 'Go', entries: ['go.next', 'go.previous', '---', ...PROJECTS.map((project) => `go.mission.${project.id}`)] },
   { label: 'Help', entries: ['help.shortcuts', 'help.about'] },
 ]

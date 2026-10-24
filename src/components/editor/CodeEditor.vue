@@ -161,6 +161,11 @@ watch(
 )
 
 watch(
+  () => props.readOnly,
+  (readOnly) => editor?.updateOptions({ readOnly: readOnly ?? false }),
+)
+
+watch(
   () => props.fontSize,
   (size) => {
     if (size) editor?.updateOptions({ fontSize: size, lineHeight: Math.round(size * 1.6) })

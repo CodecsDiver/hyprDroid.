@@ -119,6 +119,11 @@ function handle(event: JuiceEvent): void {
       })
       break
     }
+    case 'celebrate':
+      flashScreen('rgb(var(--neon-amber-rgb) / 0.22)')
+      shake(6 + event.scale * 3, 450)
+      fireworks(2 + event.scale * 3, [HUE_AMBER, HUE_GREEN, HUE_CYAN, HUE_VIOLET], 0.8 + event.scale * 0.4)
+      break
     case 'project-completed':
       flashScreen('rgb(var(--neon-violet-rgb) / 0.28)')
       shake(12, 600)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GhostRaceOverlay from '../components/ghost/GhostRaceOverlay.vue'
 import ThemeEditor from '../components/theme/ThemeEditor.vue'
 import { usePracticeStore } from '../stores/practiceStore'
 import { useThemeStore } from '../stores/themeStore'
@@ -226,6 +227,7 @@ onBeforeUnmount(() => {
     <CommandPalette />
     <DialogHost />
     <ThemeEditor />
+    <GhostRaceOverlay />
   </div>
 </template>
 

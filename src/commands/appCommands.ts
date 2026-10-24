@@ -1,5 +1,6 @@
 import { isNativeRuntime, toBackendError } from '../backend/backend'
 import { MAIN_FILE_NAME, PROJECTS } from '../curriculum/projects'
+import { useProgressionStore } from '../stores/progressionStore'
 import { useSettingsStore, type AnimationIntensity } from '../stores/settingsStore'
 import { useUiStore } from '../stores/uiStore'
 import { useWorkspaceStore } from '../stores/workspaceStore'
@@ -22,6 +23,7 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
   const settings = useSettingsStore()
   const workspace = useWorkspaceStore()
   const ui = useUiStore()
+  const progression = useProgressionStore()
 
   const editorCommand = (
     id: string,
@@ -106,6 +108,7 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
     { id: 'run.run', title: 'Run', category: 'Run', shortcuts: ['Ctrl+Enter'], run: () => void workspace.run(), isEnabled: () => !workspace.isBusy },
     { id: 'run.check', title: 'Check my work', category: 'Run', shortcuts: ['Ctrl+Shift+Enter'], run: () => void workspace.checkWork(), isEnabled: () => !workspace.isBusy },
     { id: 'run.visualize', title: 'Visualize this file (animate the list it sorts)', category: 'Run', run: () => visualizeActiveFile(), isEnabled: () => !workspace.isBusy },
+    { id: 'run.race', title: 'Race the ghost on this mission...', category: 'Run', run: () => ui.startRace(workspace.selectedProjectId), isEnabled: () => !workspace.isFreeCode && progression.hasCompletedProject(workspace.selectedProjectId) },
     { id: 'run.clear', title: 'Clear output', category: 'Run', run: () => workspace.clearOutput() },
 
     { id: 'go.next', title: 'Next mission', category: 'Go', run: () => void workspace.goToMissionOffset(1) },

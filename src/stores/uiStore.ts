@@ -21,6 +21,8 @@ export const useUiStore = defineStore('ui', () => {
   const isPaletteOpen = ref(false)
   const dialog = ref<DialogRequest | null>(null)
   const isThemeEditorOpen = ref(false)
+  /** The mission being raced against its ghost, or null. */
+  const raceMissionId = ref<string | null>(null)
 
   function confirm(title: string, message: string, confirmLabel = 'Continue'): Promise<boolean> {
     return new Promise((resolve) => {
@@ -47,7 +49,9 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
-    isPaletteOpen, dialog, isThemeEditorOpen, confirm, prompt, submitPrompt, closeDialog,
+    isPaletteOpen, dialog, isThemeEditorOpen, raceMissionId, confirm, prompt, submitPrompt, closeDialog,
+    startRace: (missionId: string) => (raceMissionId.value = missionId),
+    endRace: () => (raceMissionId.value = null),
     openThemeEditor: () => (isThemeEditorOpen.value = true),
     closeThemeEditor: () => (isThemeEditorOpen.value = false),
     openPalette: () => (isPaletteOpen.value = true),
