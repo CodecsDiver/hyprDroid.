@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { LAB_COURSES } from './courses'
 import { buildTraceRunnerSource, parseTraceOutput, type TraceMode } from './traceRunner'
 
 function trace(mode: TraceMode, fileName: string, source: string) {
@@ -58,4 +59,15 @@ describe('items mode keeps working on main.py', () => {
     const frames = trace('items', 'main.py', 'items = [2, 1]\nitems[0], items[1] = items[1], items[0]\n')
     expect(frames).not.toBeNull()
   })
+})
+
+describe('every sorting course traces the real student code', () => {
+  for (const course of LAB_COURSES.filter((candidate) => candidate.trace)) {
+    it(`${course.id} records frames that end sorted`, () => {
+      const frames = trace(course.trace!, 'main.py', course.code)
+      expect(frames, course.id).not.toBeNull()
+      const final = frames![frames!.length - 1].values
+      expect(final).toEqual([...final].sort((a, b) => a - b))
+    })
+  }
 })

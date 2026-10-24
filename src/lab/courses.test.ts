@@ -29,6 +29,20 @@ describe.each(LAB_COURSES)('course $id', (course) => {
   })
 })
 
+describe('lab sections', () => {
+  it('keeps the original twelve as the Beginner Deep End and adds the bigger algorithms', () => {
+    expect(LAB_COURSES.filter((course) => course.section === 'Beginner Deep End')).toHaveLength(12)
+    expect(LAB_COURSES.filter((course) => course.section === 'Bigger Algorithms').map((course) => course.id)).toEqual([
+      'sort-heap', 'search-astar', 'graph-dijkstra', 'graph-topological', 'dp-lcs', 'dp-knapsack', 'dp-coins', 'backtrack-queens',
+    ])
+  })
+  it('bigger algorithms are long enough to need at least three chunks', () => {
+    for (const course of LAB_COURSES.filter((candidate) => candidate.section === 'Bigger Algorithms')) {
+      expect(splitCode(course.code).length, course.id).toBeGreaterThan(11)
+    }
+  })
+})
+
 describe('lab catalogue', () => {
   it('has the five sorting algorithms and unique ids', () => {
     expect(LAB_COURSES.filter((course) => course.group === 'Sorting').map((course) => course.id)).toEqual([

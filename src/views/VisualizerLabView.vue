@@ -6,7 +6,7 @@ import { readProjectFile } from '../backend/backend'
 import TypingPanel from '../components/lab/TypingPanel.vue'
 import ResizeHandle from '../components/shell/ResizeHandle.vue'
 import TitleBar from '../components/shell/TitleBar.vue'
-import { LAB_COURSES, findCourse } from '../lab/courses'
+import { LAB_COURSES, findCourse, type LabSection } from '../lab/courses'
 import { LAB_REPLAY_KEY } from '../lab/replay'
 import { evaluateTyping, splitCode } from '../lab/typingCourse'
 import { PANEL_LIMITS } from '../layout/resize'
@@ -32,8 +32,22 @@ const readSavedCourse = (): string => {
 }
 const selectedCourseId = ref(findCourse(readSavedCourse()) ? readSavedCourse() : LAB_COURSES[0].id)
 const selectedCourse = computed(() => findCourse(selectedCourseId.value) ?? LAB_COURSES[0])
-const groups = computed(() =>
-  (['Sorting', 'Visualizers'] as const).map((group) => ({ group, courses: LAB_COURSES.filter((course) => course.group === group) })),
+const SECTION_BLURBS: Record<LabSection, string> = {
+  'Beginner Deep End': 'Lessons that drop you straight into the code',
+  'Bigger Algorithms': 'Heaps, graphs, dynamic programming and backtracking',
+}
+/** Two levels: a section, then the groups inside it, each with its courses. */
+const sections = computed(() =>
+  (['Beginner Deep End', 'Bigger Algorithms'] as const).map((section) => {
+    const inSection = LAB_COURSES.filter((course) => course.section === section)
+    const groupNames = [...new Set(inSection.map((course) => course.group))]
+    return {
+      section,
+      blurb: SECTION_BLURBS[section],
+      courses: inSection,
+      groups: groupNames.map((group) => ({ group, courses: inSection.filter((course) => course.group === group) })),
+    }
+  }),
 )
 
 // --- completion marks: a course is complete once its typed file matches every line ---------------
@@ -139,7 +153,13 @@ onBeforeUnmount(() => {
 
     <div class="body" :style="{ gridTemplateColumns: `${settings.layout.labSidebarWidth}px 12px minmax(0, 1fr)` }">
       <nav class="catalog panel" data-theme-part="lab">
-        <div v-for="entry in groups" :key="entry.group" class="group">
+        <template v-for="block in sections" :key="block.section">
+        <div class="section-head">
+          <span class="section-name">{{ block.section }}</span>
+          <span class="section-blurb">{{ block.blurb }}</span>
+          <span class="group-count">{{ completedCount(block.courses) }} / {{ block.courses.length }}</span>
+        </div>
+        <div v-for="entry in block.groups" :key="entry.group" class="group">
           <div class="panel-title">{{ entry.group }} <span class="group-count">{{ completedCount(entry.courses) }} / {{ entry.courses.length }}</span></div>
           <ul>
             <li
@@ -157,6 +177,7 @@ onBeforeUnmount(() => {
             </li>
           </ul>
         </div>
+        </template>
       </nav>
 
       <ResizeHandle
@@ -247,4 +268,8 @@ onBeforeUnmount(() => {
   background: rgb(var(--neon-violet-rgb) / 0.12); border: 1px solid var(--neon-violet); color: var(--neon-violet);
 }
 .race-btn:hover { box-shadow: var(--glow-violet); }
+.section-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 6px 10px 2px; padding: 10px 10px 8px; border-bottom: 1px solid var(--neon-violet); }
+.section-name { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.16em; color: var(--neon-violet); text-transform: uppercase; }
+.section-blurb { flex-basis: 100%; order: 3; font-size: 11px; color: var(--text-dim); }
+.section-head .group-count { margin-left: auto; }
 </style>

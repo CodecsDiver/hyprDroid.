@@ -111,14 +111,14 @@ onBeforeUnmount(() => {
 .level-up-core { position: relative; text-align: center; }
 .kicker { font-size: 13px; letter-spacing: 0.5em; color: var(--lv-a); text-shadow: 0 0 12px var(--lv-a); animation: fade-rise 0.6s 0.1s both; }
 .headline {
-  font-family: var(--font-display); font-size: 74px; font-weight: 900; letter-spacing: 0.18em; color: var(--flash);
+  font-family: var(--font-display); font-size: 92px; font-weight: 900; letter-spacing: 0.18em; color: var(--flash);
   text-shadow: 0 0 20px var(--lv-b), 0 0 60px var(--lv-c);
   animation: headline-slam 0.7s cubic-bezier(0.2, 1.5, 0.3, 1) 0.15s both;
 }
-.tier-rank .headline, .tier-milestone .headline { font-size: 88px; }
-.tier-legend .headline { font-size: 96px; animation-name: headline-slam, legend-pulse; animation-duration: 0.7s, 1.4s; animation-delay: 0.15s, 0.9s; animation-iteration-count: 1, infinite; }
+.tier-rank .headline, .tier-milestone .headline { font-size: 112px; }
+.tier-legend .headline { font-size: 132px; animation-name: headline-slam, legend-pulse; animation-duration: 0.7s, 1.4s; animation-delay: 0.15s, 0.9s; animation-iteration-count: 1, infinite; }
 .number {
-  font-family: var(--font-display); font-size: 190px; line-height: 1; font-weight: 900;
+  font-family: var(--font-display); font-size: 230px; line-height: 1; font-weight: 900;
   background: linear-gradient(180deg, var(--flash) 0%, var(--lv-a) 45%, var(--lv-b) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 0 calc(24px * var(--fx-scale)) var(--lv-a));

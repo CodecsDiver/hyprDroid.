@@ -54,3 +54,58 @@ describe('fibonacciFrames', () => {
     }
   })
 })
+
+describe('bigger algorithms', () => {
+  it('heap sort ends sorted and settles every position', async () => {
+    const { sortFrames } = await import('./sorting')
+    const input = [9, 4, 7, 1, 8, 2, 6, 3, 5, 10, 0]
+    const frames = sortFrames('heap', input)
+    expect(frames.at(-1)!.values).toEqual([...input].sort((a, b) => a - b))
+    expect(frames.at(-1)!.settled).toHaveLength(input.length)
+  })
+
+  it('A* finds a shortest path while looking at fewer cells than BFS on open ground', () => {
+    const goal = { row: 9, column: 9 }
+    const bfs = gridSearchFrames('bfs', 10, 10, new Set(), { row: 0, column: 0 }, goal).at(-1)!
+    const astar = gridSearchFrames('astar', 10, 10, new Set(), { row: 0, column: 0 }, goal).at(-1)!
+    expect(astar.path).toHaveLength(bfs.path!.length)
+    expect(astar.visited.length).toBeLessThan(bfs.visited.length)
+  })
+
+  it('A* reports no path when the goal is walled in', () => {
+    const walls = new Set(['0,1', '1,0', '1,1'])
+    const last = gridSearchFrames('astar', 3, 3, walls, { row: 0, column: 0 }, { row: 2, column: 2 }).at(-1)!
+    expect(last.path).toBeNull()
+  })
+
+  it('Dijkstra finds the shortest distances on the road graph', async () => {
+    const { dijkstraFrames, ROAD_GRAPH } = await import('./graph')
+    expect(dijkstraFrames(ROAD_GRAPH, 'A').at(-1)!.labels).toEqual({ A: '0', B: '4', C: '2', D: '9', E: '11', F: '14' })
+  })
+
+  it('topological order respects every dependency', async () => {
+    const { topologicalFrames, MORNING_GRAPH } = await import('./graph')
+    const order = topologicalFrames(MORNING_GRAPH).at(-1)!.order
+    expect(order).toHaveLength(MORNING_GRAPH.nodes.length)
+    for (const edge of MORNING_GRAPH.edges) expect(order.indexOf(edge.from)).toBeLessThan(order.indexOf(edge.to))
+  })
+
+  it('dynamic programming tables end on the right answers', async () => {
+    const { lcsFrames, knapsackFrames, coinFrames } = await import('./dp')
+    const answerOf = (frames: ReturnType<typeof lcsFrames>) => {
+      const last = frames.at(-1)!
+      return last.table[last.answer![0]][last.answer![1]]
+    }
+    expect(answerOf(lcsFrames('ABCBDAB', 'BDCABA'))).toBe(4)
+    expect(answerOf(knapsackFrames([1, 3, 4, 5], [1, 4, 5, 7], 7))).toBe(9)
+    expect(answerOf(coinFrames([1, 5, 6, 9], 11))).toBe(2)
+    expect(answerOf(coinFrames([2], 3))).toBe(Infinity)
+  })
+
+  it('N-Queens backtracking reaches the first solution of the 6x6 board', async () => {
+    const { queensFrames } = await import('./nqueens')
+    const last = queensFrames(6).at(-1)!
+    expect(last.solved).toBe(true)
+    expect(last.queens).toEqual([1, 3, 5, 0, 2, 4])
+  })
+})

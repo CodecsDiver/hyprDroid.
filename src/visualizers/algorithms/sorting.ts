@@ -7,7 +7,7 @@ export interface SortFrame {
   note: string
 }
 
-export type SortAlgorithmId = 'bubble' | 'insertion' | 'selection' | 'quick' | 'merge'
+export type SortAlgorithmId = 'bubble' | 'insertion' | 'selection' | 'quick' | 'merge' | 'heap'
 
 export const SORT_ALGORITHMS: ReadonlyArray<{ id: SortAlgorithmId; label: string; complexity: string }> = [
   { id: 'bubble', label: 'Bubble sort', complexity: 'O(n^2)' },
@@ -15,6 +15,7 @@ export const SORT_ALGORITHMS: ReadonlyArray<{ id: SortAlgorithmId; label: string
   { id: 'selection', label: 'Selection sort', complexity: 'O(n^2)' },
   { id: 'quick', label: 'Quick sort', complexity: 'O(n log n) average' },
   { id: 'merge', label: 'Merge sort', complexity: 'O(n log n)' },
+  { id: 'heap', label: 'Heap sort', complexity: 'O(n log n)' },
 ]
 
 const snapshot = (values: number[], active: number[], settled: Iterable<number>, note: string): SortFrame => ({
@@ -134,6 +135,39 @@ function* mergeSort(input: number[]): Generator<SortFrame> {
   yield snapshot(values, [], values.keys(), 'Sorted')
 }
 
+function* heapSort(input: number[]): Generator<SortFrame> {
+  const values = [...input]
+  const settled = new Set<number>()
+
+  /** Pushes values[root] down until both children are smaller, like a heavy stone sinking in water. */
+  function* siftDown(start: number, end: number): Generator<SortFrame> {
+    let root = start
+    while (true) {
+      let child = 2 * root + 1
+      if (child > end) return
+      if (child + 1 <= end) {
+        yield snapshot(values, [child, child + 1], settled, `Which child is bigger: ${values[child]} or ${values[child + 1]}?`)
+        if (values[child] < values[child + 1]) child++
+      }
+      yield snapshot(values, [root, child], settled, `Compare parent ${values[root]} with its bigger child ${values[child]}`)
+      if (values[root] >= values[child]) return
+      ;[values[root], values[child]] = [values[child], values[root]]
+      yield snapshot(values, [root, child], settled, 'Parent is smaller: swap it down')
+      root = child
+    }
+  }
+
+  for (let start = Math.floor(values.length / 2) - 1; start >= 0; start--) yield* siftDown(start, values.length - 1)
+  yield snapshot(values, [0], settled, 'The array is now a max-heap: the biggest value is at the top')
+  for (let end = values.length - 1; end > 0; end--) {
+    ;[values[0], values[end]] = [values[end], values[0]]
+    settled.add(end)
+    yield snapshot(values, [0, end], settled, `Move the biggest (${values[end]}) to its final place`)
+    yield* siftDown(0, end - 1)
+  }
+  yield snapshot(values, [], values.keys(), 'Sorted')
+}
+
 export function sortFrames(algorithm: SortAlgorithmId, input: number[]): SortFrame[] {
   const generators: Record<SortAlgorithmId, (values: number[]) => Generator<SortFrame>> = {
     bubble: bubbleSort,
@@ -141,6 +175,7 @@ export function sortFrames(algorithm: SortAlgorithmId, input: number[]): SortFra
     selection: selectionSort,
     quick: quickSort,
     merge: mergeSort,
+    heap: heapSort,
   }
   return [snapshot(input, [], [], 'Unsorted input'), ...generators[algorithm](input)]
 }

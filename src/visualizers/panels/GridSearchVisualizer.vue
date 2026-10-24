@@ -62,8 +62,9 @@ function cellClass(row: number, column: number): string {
       <div v-if="!fixedKind" class="segments">
         <button class="segment" :class="{ on: kind === 'bfs' }" @click="kind = 'bfs'">BFS &middot; queue</button>
         <button class="segment" :class="{ on: kind === 'dfs' }" @click="kind = 'dfs'">DFS &middot; stack</button>
+        <button class="segment" :class="{ on: kind === 'astar' }" @click="kind = 'astar'">A* &middot; priority</button>
       </div>
-      <strong v-if="fixedKind" class="kind-name">{{ kind === 'bfs' ? 'BFS · queue' : 'DFS · stack' }}</strong>
+      <strong v-if="fixedKind" class="kind-name">{{ kind === 'bfs' ? 'BFS · queue' : kind === 'dfs' ? 'DFS · stack' : 'A* · priority queue + straight-line guess' }}</strong>
       <span class="hint">Click cells to build walls, then press Play.</span>
     </div>
 
