@@ -10,7 +10,8 @@
     "preview:web": "vite preview --outDir dist-web --port 4173 --host",
     "test": "vitest run",
     "tauri": "tauri",
-    "build:web-deb": "pnpm build:web && bash scripts/build-web-deb.sh"
+    "build:web-deb": "pnpm build:web && bash scripts/build-web-deb.sh",
+    "build:windows-zip": "pnpm build:web && bash scripts/build-windows-zip.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
