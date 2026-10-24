@@ -215,7 +215,7 @@ const statusOf = (id: string) => results.value[id]?.status
 </template>
 
 <style scoped>
-.race-scrim { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; background: rgb(var(--void-rgb) / 0.82); }
+.race-scrim { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; background: rgb(var(--void-rgb) / 0.82); }
 .race { position: relative; width: min(1320px, 96vw); height: min(780px, 92vh); display: flex; flex-direction: column; background: var(--hull-raised); overflow: hidden; }
 .panel-title { display: flex; align-items: center; gap: 14px; }
 .no-xp { margin-left: auto; font-size: 10px; letter-spacing: 0.18em; color: var(--text-dim); }

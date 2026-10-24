@@ -20,7 +20,7 @@ export interface SandboxStatus {
   bubblewrapUsable: boolean
 }
 
-export type DocumentName = 'settings' | 'progression' | 'theme' | 'practice'
+export type DocumentName = 'settings' | 'progression' | 'theme' | 'practice' | 'typscryption'
 
 /**
  * Two runtimes share one UI. In the desktop app (Tauri) the Rust backend stores files on disk and runs

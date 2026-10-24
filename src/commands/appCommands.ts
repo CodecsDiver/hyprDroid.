@@ -111,6 +111,7 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
     { id: 'run.race', title: 'Race the ghost on this mission...', category: 'Run', run: () => ui.startRace(workspace.selectedProjectId), isEnabled: () => !workspace.isFreeCode && progression.hasCompletedProject(workspace.selectedProjectId) },
     { id: 'run.clear', title: 'Clear output', category: 'Run', run: () => workspace.clearOutput() },
 
+    { id: 'go.typscryption', title: 'Typscryption: race the bot', category: 'Go', shortcuts: ['Ctrl+Alt+Y'], run: () => ui.openTypscryption() },
     { id: 'go.next', title: 'Next mission', category: 'Go', run: () => void workspace.goToMissionOffset(1) },
     { id: 'go.previous', title: 'Previous mission', category: 'Go', run: () => void workspace.goToMissionOffset(-1) },
     ...PROJECTS.map((project): AppCommand => ({

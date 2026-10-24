@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GhostRaceOverlay from '../components/ghost/GhostRaceOverlay.vue'
+import TypscryptionView from '../components/typscryption/TypscryptionView.vue'
 import ThemeEditor from '../components/theme/ThemeEditor.vue'
 import { usePracticeStore } from '../stores/practiceStore'
 import { useThemeStore } from '../stores/themeStore'
@@ -148,6 +149,7 @@ onBeforeUnmount(() => {
       <span v-else-if="workspace.sandbox && !workspace.sandbox.bubblewrapUsable" class="chip warn" title="sudo apt install bubblewrap">NO SANDBOX</span>
       <span v-else-if="workspace.sandbox" class="chip ok">SANDBOX ARMED</span>
       <span v-if="workspace.sandbox && !workspace.sandbox.pythonPath" class="chip bad">PYTHON 3 NOT FOUND</span>
+      <button class="btn is-amber" @click="ui.openTypscryption()">&#9876; Typscryption</button>
       <button class="btn is-ghost" @click="ui.openThemeEditor()">&#9673; Theme</button>
       <button class="btn is-violet" @click="openLabWindow()">&#10022; Visualizer Lab</button>
       <SettingsMenu />
@@ -228,6 +230,7 @@ onBeforeUnmount(() => {
     <DialogHost />
     <ThemeEditor />
     <GhostRaceOverlay />
+    <TypscryptionView />
   </div>
 </template>
 

@@ -23,7 +23,7 @@ const MENUS: ReadonlyArray<{ label: string; entries: MenuEntry[] }> = [
     ],
   },
   { label: 'Run', entries: ['run.run', 'run.check', 'run.visualize', 'run.race', '---', 'run.clear'] },
-  { label: 'Go', entries: ['go.next', 'go.previous', '---', ...PROJECTS.map((project) => `go.mission.${project.id}`)] },
+  { label: 'Go', entries: ['go.typscryption', '---', 'go.next', 'go.previous', '---', ...PROJECTS.map((project) => `go.mission.${project.id}`)] },
   { label: 'Help', entries: ['help.shortcuts', 'help.about'] },
 ]
 

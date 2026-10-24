@@ -21,6 +21,7 @@ export const useUiStore = defineStore('ui', () => {
   const isPaletteOpen = ref(false)
   const dialog = ref<DialogRequest | null>(null)
   const isThemeEditorOpen = ref(false)
+  const isTypscryptionOpen = ref(false)
   /** The mission being raced against its ghost, or null. */
   const raceMissionId = ref<string | null>(null)
 
@@ -49,9 +50,11 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
-    isPaletteOpen, dialog, isThemeEditorOpen, raceMissionId, confirm, prompt, submitPrompt, closeDialog,
+    isPaletteOpen, dialog, isThemeEditorOpen, isTypscryptionOpen, raceMissionId, confirm, prompt, submitPrompt, closeDialog,
     startRace: (missionId: string) => (raceMissionId.value = missionId),
     endRace: () => (raceMissionId.value = null),
+    openTypscryption: () => (isTypscryptionOpen.value = true),
+    closeTypscryption: () => (isTypscryptionOpen.value = false),
     openThemeEditor: () => (isThemeEditorOpen.value = true),
     closeThemeEditor: () => (isThemeEditorOpen.value = false),
     openPalette: () => (isPaletteOpen.value = true),
