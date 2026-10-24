@@ -60,8 +60,8 @@ onBeforeUnmount(() => {
 .track {
   position: relative;
   height: 22px;
-  background: rgba(4, 5, 10, 0.9);
-  border: 1px solid rgba(25, 230, 255, 0.4);
+  background: rgb(var(--void-rgb) / 0.9);
+  border: 1px solid rgb(var(--neon-cyan-rgb) / 0.4);
   clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
   overflow: hidden;
 }
@@ -69,7 +69,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   transform-origin: left center;
-  background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan) 55%, var(--neon-violet));
+  background: linear-gradient(90deg, var(--level-bar-from), var(--level-bar-mid) 55%, var(--level-bar-to));
   box-shadow: var(--glow-cyan);
   transition: transform 0.7s cubic-bezier(0.2, 0.9, 0.15, 1);
 }
@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
 .ticks {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(4, 5, 10, 0.55) calc(10% - 1px) 10%);
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgb(var(--void-rgb) / 0.55) calc(10% - 1px) 10%);
   pointer-events: none;
 }
 .readout {
@@ -98,14 +98,14 @@ onBeforeUnmount(() => {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: #fff;
+  color: var(--flash);
   text-shadow: 0 0 4px #000, 0 0 8px #000;
 }
 .flashing .track {
   animation: level-flash 0.5s ease-out;
 }
 @keyframes level-flash {
-  0% { box-shadow: 0 0 0 0 #fff; filter: brightness(2.4); }
+  0% { box-shadow: 0 0 0 0 var(--flash); filter: brightness(2.4); }
   100% { box-shadow: 0 0 calc(34px * var(--fx-scale)) 6px transparent; filter: brightness(1); }
 }
 </style>

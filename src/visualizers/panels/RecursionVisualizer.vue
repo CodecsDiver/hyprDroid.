@@ -92,11 +92,11 @@ const totalCalls = computed(() => frames.value.at(-1)!.nodes.length)
 input[type='range'] { accent-color: var(--neon-violet); }
 .counter { margin-left: auto; color: var(--text-dim); }
 .counter b { color: var(--neon-green); }
-.stage { overflow: auto; max-height: 380px; padding: 8px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); text-align: center; }
-.edge { stroke: rgba(25, 230, 255, 0.4); stroke-width: 1.5; }
-.node { fill: #0d1220; stroke: var(--metal-light); stroke-width: 2; transition: fill 0.2s, stroke 0.2s; }
-.node.active { stroke: var(--neon-amber); fill: rgba(255, 200, 61, 0.22); }
-.node.done { stroke: var(--neon-green); fill: rgba(57, 255, 136, 0.14); }
+.stage { overflow: auto; max-height: 380px; padding: 8px; background: rgb(var(--void-rgb) / 0.7); border: 1px solid rgb(var(--neon-cyan-rgb) / 0.2); text-align: center; }
+.edge { stroke: rgb(var(--neon-cyan-rgb) / 0.4); stroke-width: 1.5; }
+.node { fill: var(--hull-raised); stroke: var(--metal-light); stroke-width: 2; transition: fill 0.2s, stroke 0.2s; }
+.node.active { stroke: var(--neon-amber); fill: rgb(var(--neon-amber-rgb) / 0.22); }
+.node.done { stroke: var(--neon-green); fill: rgb(var(--neon-green-rgb) / 0.14); }
 .node.active.done { stroke: var(--neon-amber); }
 .label { fill: var(--text); font-size: 12px; font-weight: 700; text-anchor: middle; }
 .result { fill: var(--neon-green); font-size: 10px; text-anchor: middle; }

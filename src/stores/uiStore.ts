@@ -18,6 +18,7 @@ export type DialogRequest =
 export const useUiStore = defineStore('ui', () => {
   const isPaletteOpen = ref(false)
   const dialog = ref<DialogRequest | null>(null)
+  const isThemeEditorOpen = ref(false)
 
   function confirm(title: string, message: string, confirmLabel = 'Continue'): Promise<boolean> {
     return new Promise((resolve) => {
@@ -44,7 +45,9 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
-    isPaletteOpen, dialog, confirm, prompt, submitPrompt, closeDialog,
+    isPaletteOpen, dialog, isThemeEditorOpen, confirm, prompt, submitPrompt, closeDialog,
+    openThemeEditor: () => (isThemeEditorOpen.value = true),
+    closeThemeEditor: () => (isThemeEditorOpen.value = false),
     openPalette: () => (isPaletteOpen.value = true),
     closePalette: () => (isPaletteOpen.value = false),
     showAbout: () => (dialog.value = { kind: 'about' }),

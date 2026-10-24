@@ -6,6 +6,9 @@ import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { emitJuice } from '../../juice/juiceBus'
 import { useComboStore } from '../../stores/comboStore'
+import { useThemeStore } from '../../stores/themeStore'
+import { resolveToken } from '../../theme/applyTheme'
+import { buildMonacoTheme } from '../../theme/monacoTheme'
 
 const props = defineProps<{
   modelValue: string
@@ -36,33 +39,13 @@ let isApplyingExternalValue = false
 let lastBurstAt = 0
 let lineMarks: monaco.editor.IEditorDecorationsCollection | undefined
 
-monaco.editor.defineTheme(REALM_THEME, {
-  base: 'vs-dark',
-  inherit: true,
-  rules: [
-    { token: 'comment', foreground: '5b7a8c', fontStyle: 'italic' },
-    { token: 'keyword', foreground: 'a45cff', fontStyle: 'bold' },
-    { token: 'string', foreground: '39ff88' },
-    { token: 'number', foreground: 'ffc83d' },
-    { token: 'identifier', foreground: 'dbe8f5' },
-    { token: 'delimiter', foreground: '19e6ff' },
-    { token: 'type.identifier', foreground: '19e6ff' },
-  ],
-  colors: {
-    'editor.background': '#060912',
-    'editor.foreground': '#dbe8f5',
-    'editor.lineHighlightBackground': '#101a2e',
-    'editor.selectionBackground': '#19e6ff44',
-    'editorCursor.foreground': '#39ff88',
-    'editorLineNumber.foreground': '#3b4d66',
-    'editorLineNumber.activeForeground': '#19e6ff',
-    'editorIndentGuide.background1': '#142036',
-    'editorIndentGuide.activeBackground1': '#19e6ff66',
-    'editorGutter.background': '#060912',
-    'scrollbarSlider.background': '#19e6ff33',
-    'scrollbarSlider.hoverBackground': '#19e6ff66',
-  },
-})
+const themeStore = useThemeStore()
+
+function applyEditorTheme(): void {
+  monaco.editor.defineTheme(REALM_THEME, buildMonacoTheme(themeStore.overrides))
+  monaco.editor.setTheme(REALM_THEME)
+}
+applyEditorTheme()
 
 function emitKeystrokeBurst(): void {
   const now = performance.now()
@@ -86,7 +69,7 @@ onMounted(() => {
     language: 'python',
     theme: REALM_THEME,
     readOnly: props.readOnly,
-    fontFamily: "'JetBrains Mono', 'Fira Code', 'DejaVu Sans Mono', monospace",
+    fontFamily: resolveToken('fontEditor', themeStore.overrides),
     fontSize: props.fontSize ?? 15,
     lineHeight: Math.round((props.fontSize ?? 15) * 1.6),
     fontLigatures: true,
@@ -166,6 +149,14 @@ watch(
     isApplyingExternalValue = true
     editor.setValue(value)
     isApplyingExternalValue = false
+  },
+)
+
+watch(
+  () => themeStore.overrides,
+  () => {
+    applyEditorTheme()
+    editor?.updateOptions({ fontFamily: resolveToken('fontEditor', themeStore.overrides) })
   },
 )
 

@@ -36,7 +36,7 @@ const saveState = computed(() => {
 </template>
 
 <style scoped>
-.editor-header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; border-bottom: 1px solid rgba(25, 230, 255, 0.16); }
+.editor-header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; border-bottom: 1px solid rgb(var(--neon-cyan-rgb) / 0.16); }
 .save-state { font-size: 10px; letter-spacing: 0.2em; }
 .save-state.clean { color: var(--neon-green); }
 .save-state.dirty { color: var(--neon-amber); }
@@ -44,6 +44,6 @@ const saveState = computed(() => {
 @keyframes blink { 50% { opacity: 0.35; } }
 .spacer { flex: 1; }
 .glyph { font-size: 12px; }
-.kbd { color: rgba(4, 5, 10, 0.65); border-color: rgba(4, 5, 10, 0.35); letter-spacing: 0; }
-.btn.is-ghost .kbd { color: var(--text-dim); border-color: rgba(113, 134, 160, 0.4); }
+.kbd { color: rgb(var(--void-rgb) / 0.65); border-color: rgb(var(--void-rgb) / 0.35); letter-spacing: 0; }
+.btn.is-ghost .kbd { color: var(--text-dim); border-color: rgb(var(--text-dim-rgb) / 0.4); }
 </style>

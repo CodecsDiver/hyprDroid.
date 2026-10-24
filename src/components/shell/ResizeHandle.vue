@@ -83,7 +83,7 @@ function onKeydown(event: KeyboardEvent): void {
 .resize-handle.vertical { width: 12px; margin: 0 -3px; cursor: col-resize; }
 .resize-handle.horizontal { height: 12px; margin: -3px 0; cursor: row-resize; }
 .grip {
-  background: rgba(25, 230, 255, 0.28);
+  background: rgb(var(--neon-cyan-rgb) / 0.28);
   border-radius: 2px;
   transition: background 0.15s, box-shadow 0.15s;
 }

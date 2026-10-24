@@ -94,7 +94,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </template>
 
 <style scoped>
-.scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgba(4, 5, 10, 0.75); }
+.scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgb(var(--void-rgb) / 0.75); }
 .dialog { width: 480px; max-width: 92vw; background: var(--hull-raised); }
 .dialog.wide { width: 620px; }
 .content { padding: 16px 20px 20px; line-height: 1.6; max-height: 70vh; overflow: auto; }
@@ -103,13 +103,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
 .text-input {
-  padding: 10px 12px; font-family: inherit; font-size: 15px; color: var(--text); background: rgba(4, 5, 10, 0.85);
+  padding: 10px 12px; font-family: inherit; font-size: 15px; color: var(--text); background: rgb(var(--void-rgb) / 0.85);
   border: 1px solid var(--glass-edge); outline: none; user-select: text; -webkit-user-select: text;
 }
 .text-input:focus { border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
 .field-error { min-height: 18px; margin: 6px 0 0; font-size: 12px; color: var(--neon-red); }
 .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
 table { width: 100%; border-collapse: collapse; }
-td { padding: 5px 0; border-bottom: 1px solid rgba(113, 134, 160, 0.15); }
+td { padding: 5px 0; border-bottom: 1px solid rgb(var(--text-dim-rgb) / 0.15); }
 .keys { text-align: right; color: var(--neon-cyan); white-space: nowrap; }
 </style>

@@ -90,17 +90,17 @@ function cellClass(row: number, column: number): string {
 .viz { display: flex; flex-direction: column; gap: 14px; }
 .toolbar { display: flex; align-items: center; gap: 18px; }
 .segments { display: flex; }
-.segment { padding: 8px 16px; cursor: pointer; background: transparent; border: 1px solid rgba(113, 134, 160, 0.4); color: var(--text-dim); font-size: 11px; letter-spacing: 0.1em; }
+.segment { padding: 8px 16px; cursor: pointer; background: transparent; border: 1px solid rgb(var(--text-dim-rgb) / 0.4); color: var(--text-dim); font-size: 11px; letter-spacing: 0.1em; }
 .segment.on { color: var(--void); background: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
 .hint { color: var(--text-dim); font-size: 12px; }
 .kind-name { color: var(--neon-cyan); letter-spacing: 0.1em; }
-.grid { display: grid; gap: 2px; padding: 10px; max-width: 760px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
+.grid { display: grid; gap: 2px; padding: 10px; max-width: 760px; background: rgb(var(--void-rgb) / 0.7); border: 1px solid rgb(var(--neon-cyan-rgb) / 0.2); }
 .cell { aspect-ratio: 1; background: rgba(255, 255, 255, 0.04); cursor: pointer; transition: background 0.15s, transform 0.15s; }
 .cell:hover { background: rgba(255, 255, 255, 0.12); }
-.cell.wall { background: #2a3350; box-shadow: inset 0 0 0 1px var(--metal-light); }
-.cell.visited { background: rgba(164, 92, 255, 0.45); }
-.cell.frontier { background: rgba(255, 200, 61, 0.55); }
-.cell.current { background: #fff; transform: scale(1.15); box-shadow: 0 0 calc(12px * var(--fx-scale)) #fff; }
+.cell.wall { background: var(--grid-wall); box-shadow: inset 0 0 0 1px var(--metal-light); }
+.cell.visited { background: rgb(var(--neon-violet-rgb) / 0.45); }
+.cell.frontier { background: rgb(var(--neon-amber-rgb) / 0.55); }
+.cell.current { background: var(--flash); transform: scale(1.15); box-shadow: 0 0 calc(12px * var(--fx-scale)) var(--flash); }
 .cell.path { background: var(--neon-green); box-shadow: var(--glow-green); }
 .cell.start { background: var(--neon-cyan); box-shadow: var(--glow-cyan); }
 .cell.goal { background: var(--neon-red); box-shadow: var(--glow-red); }
@@ -109,7 +109,7 @@ function cellClass(row: number, column: number): string {
 .swatch { width: 12px; height: 12px; display: inline-block; }
 .swatch.start { background: var(--neon-cyan); }
 .swatch.goal { background: var(--neon-red); }
-.swatch.frontier { background: rgba(255, 200, 61, 0.7); }
-.swatch.visited { background: rgba(164, 92, 255, 0.6); }
+.swatch.frontier { background: rgb(var(--neon-amber-rgb) / 0.7); }
+.swatch.visited { background: rgb(var(--neon-violet-rgb) / 0.6); }
 .swatch.path { background: var(--neon-green); }
 </style>

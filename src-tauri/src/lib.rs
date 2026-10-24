@@ -18,6 +18,7 @@ pub fn run() {
             runner::run_python,
             runner::run_checks,
             windows::open_lab_window,
+            windows::open_theme_site,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Python Discovery");

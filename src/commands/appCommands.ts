@@ -94,6 +94,7 @@ export function buildAppCommands(context: CommandContext): AppCommand[] {
     })),
     { id: 'view.sound', title: 'Sound effects', category: 'View', run: () => (settings.soundEnabled = !settings.soundEnabled), isChecked: () => settings.soundEnabled },
     { id: 'view.shake', title: 'Screen shake', category: 'View', run: () => (settings.screenShakeEnabled = !settings.screenShakeEnabled), isChecked: () => settings.screenShakeEnabled },
+    { id: 'view.theme', title: 'Theme editor...', category: 'View', shortcuts: ['Ctrl+Alt+T'], run: () => ui.openThemeEditor() },
     { id: 'view.resetLayout', title: 'Reset panel sizes and visibility', category: 'View', run: () => settings.resetLayout() },
     {
       id: 'view.fullscreen', title: 'Toggle full screen', category: 'View', shortcuts: ['F11'],

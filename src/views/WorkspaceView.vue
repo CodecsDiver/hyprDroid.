@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ThemeEditor from '../components/theme/ThemeEditor.vue'
+import { useThemeStore } from '../stores/themeStore'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { isNativeRuntime, openLabWindow } from '../backend/backend'
@@ -30,6 +32,7 @@ import { useUiStore } from '../stores/uiStore'
 import { useWorkspaceStore } from '../stores/workspaceStore'
 
 const settings = useSettingsStore()
+const theme = useThemeStore()
 const progression = useProgressionStore()
 const workspace = useWorkspaceStore()
 const ui = useUiStore()
@@ -98,6 +101,7 @@ function saveWhenLeaving(): void {
 
 onMounted(async () => {
   await settings.load()
+  await theme.load()
   await progression.load()
   stopSound = startSoundEngine(() => settings.soundEnabled)
   if (!isNativeRuntime()) {
@@ -127,7 +131,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="workspace" :class="{ focus: settings.focusMode }">
     <div class="realm-backdrop" />
-    <TitleBar title="Python Discovery" subtitle="// no autocomplete. you write every line.">
+    <TitleBar data-theme-part="titlebar" title="Python Discovery" subtitle="// no autocomplete. you write every line.">
       <button
         v-if="!isNativeRuntime()"
         class="chip chip-button"
@@ -140,16 +144,17 @@ onBeforeUnmount(() => {
       <span v-else-if="workspace.sandbox && !workspace.sandbox.bubblewrapUsable" class="chip warn" title="sudo apt install bubblewrap">NO SANDBOX</span>
       <span v-else-if="workspace.sandbox" class="chip ok">SANDBOX ARMED</span>
       <span v-if="workspace.sandbox && !workspace.sandbox.pythonPath" class="chip bad">PYTHON 3 NOT FOUND</span>
+      <button class="btn is-ghost" @click="ui.openThemeEditor()">&#9673; Theme</button>
       <button class="btn is-violet" @click="openLabWindow()">&#10022; Visualizer Lab</button>
       <SettingsMenu />
     </TitleBar>
-    <MenuBar />
+    <MenuBar data-theme-part="menubar" />
 
-    <PlayerHud />
+    <PlayerHud data-theme-part="hud" />
 
     <main class="layout" :style="{ gridTemplateColumns: gridColumns }">
       <template v-if="settings.panels.missions">
-        <MissionPanel class="side left" />
+        <MissionPanel class="side left" data-theme-part="missions" />
         <ResizeHandle
           orientation="vertical"
           label="missions panel"
@@ -162,8 +167,8 @@ onBeforeUnmount(() => {
       </template>
 
       <section class="center panel">
-        <EditorHeader />
-        <div class="editor-slot">
+        <EditorHeader data-theme-part="tabs" />
+        <div class="editor-slot" data-theme-part="editor">
           <CodeEditor
             v-if="workspace.isProjectLoaded"
             ref="editorRef"
@@ -192,7 +197,7 @@ onBeforeUnmount(() => {
             :default-size="220"
             @update:size="settings.layout.outputHeight = $event"
           />
-          <div class="output-slot" :style="{ height: `${settings.layout.outputHeight}px` }"><OutputPanel /></div>
+          <div class="output-slot" data-theme-part="output" :style="{ height: `${settings.layout.outputHeight}px` }"><OutputPanel /></div>
         </template>
       </section>
 
@@ -207,7 +212,7 @@ onBeforeUnmount(() => {
           :default-size="290"
           @update:size="settings.layout.rightWidth = $event"
         />
-        <DebriefPanel class="side right" />
+        <DebriefPanel class="side right" data-theme-part="quests" />
       </template>
     </main>
 
@@ -217,17 +222,18 @@ onBeforeUnmount(() => {
     <ConsentModal />
     <CommandPalette />
     <DialogHost />
+    <ThemeEditor />
   </div>
 </template>
 
 <style scoped>
 .workspace { position: relative; display: flex; flex-direction: column; height: 100%; }
 .layout { position: relative; z-index: 1; flex: 1; min-height: 0; display: grid; padding: 12px; }
-.center { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: rgba(6, 9, 18, 0.88); }
+.center { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: rgb(var(--editor-bg-rgb) / 0.88); }
 .editor-slot { flex: 1; min-height: 0; position: relative; }
-.output-slot { flex: none; border-top: 1px solid rgba(25, 230, 255, 0.28); background: rgba(4, 5, 10, 0.7); }
+.output-slot { flex: none; border-top: 1px solid rgb(var(--neon-cyan-rgb) / 0.28); background: rgb(var(--void-rgb) / 0.7); }
 .loading { display: grid; place-items: center; height: 100%; letter-spacing: 0.3em; color: var(--neon-cyan); }
-.save-error { padding: 6px 14px; color: var(--neon-red); background: rgba(255, 61, 110, 0.1); border-top: 1px solid var(--neon-red); font-size: 12px; }
+.save-error { padding: 6px 14px; color: var(--neon-red); background: rgb(var(--neon-red-rgb) / 0.1); border-top: 1px solid var(--neon-red); font-size: 12px; }
 .side { transition: opacity 0.35s, filter 0.35s; min-width: 0; }
 .focus .side { opacity: 0.12; filter: blur(1px); }
 .focus .side:hover { opacity: 1; filter: none; }

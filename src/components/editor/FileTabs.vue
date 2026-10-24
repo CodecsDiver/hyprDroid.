@@ -36,21 +36,21 @@ const workspace = useWorkspaceStore()
   display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap;
   color: var(--text-dim); background: rgba(255, 255, 255, 0.03); border-top: 2px solid transparent;
 }
-.tab:hover { color: var(--text); background: rgba(25, 230, 255, 0.08); }
+.tab:hover { color: var(--text); background: rgb(var(--neon-cyan-rgb) / 0.08); }
 .tab.active {
   color: var(--text); font-weight: 700; border-top-color: var(--neon-cyan);
-  background: linear-gradient(180deg, rgba(25, 230, 255, 0.16), rgba(25, 230, 255, 0.02));
+  background: linear-gradient(180deg, rgb(var(--neon-cyan-rgb) / 0.16), rgb(var(--neon-cyan-rgb) / 0.02));
 }
 .tab-icon { font-size: 9px; padding: 1px 4px; color: var(--void); background: var(--neon-amber); border-radius: 2px; }
 .dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--neon-amber); box-shadow: 0 0 8px var(--neon-amber); }
 .tab-actions { display: none; gap: 2px; margin-left: 2px; }
 .tab:hover .tab-actions, .tab.active .tab-actions { display: inline-flex; }
 .tab-action { width: 20px; height: 20px; padding: 0; border: 0; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 12px; }
-.tab-action:hover { color: var(--neon-cyan); background: rgba(25, 230, 255, 0.15); }
-.tab-action.danger:hover { color: #fff; background: var(--neon-red); }
+.tab-action:hover { color: var(--neon-cyan); background: rgb(var(--neon-cyan-rgb) / 0.15); }
+.tab-action.danger:hover { color: var(--flash); background: var(--neon-red); }
 .new-file {
   padding: 6px 12px; cursor: pointer; white-space: nowrap; font-size: 12px; color: var(--neon-green);
-  background: transparent; border: 1px dashed rgba(57, 255, 136, 0.5);
+  background: transparent; border: 1px dashed rgb(var(--neon-green-rgb) / 0.5);
 }
-.new-file:hover { background: rgba(57, 255, 136, 0.12); box-shadow: var(--glow-green); }
+.new-file:hover { background: rgb(var(--neon-green-rgb) / 0.12); box-shadow: var(--glow-green); }
 </style>

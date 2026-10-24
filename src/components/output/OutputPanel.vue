@@ -100,7 +100,7 @@ const segments = computed<Segment[]>(() => {
 
 <style scoped>
 .output { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.output-bar { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-bottom: 1px solid rgba(25, 230, 255, 0.12); }
+.output-bar { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-bottom: 1px solid rgb(var(--neon-cyan-rgb) / 0.12); }
 .panel-title-inline { font-family: var(--font-display); font-size: 10px; letter-spacing: 0.25em; color: var(--neon-cyan); }
 .chip { font-size: 10px; letter-spacing: 0.14em; padding: 2px 8px; border: 1px solid; }
 .chip.ok { color: var(--neon-green); border-color: var(--neon-green); }

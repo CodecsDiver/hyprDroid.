@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ThemeEditor from '../components/theme/ThemeEditor.vue'
+import { useThemeStore } from '../stores/themeStore'
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { readProjectFile } from '../backend/backend'
 import TypingPanel from '../components/lab/TypingPanel.vue'
@@ -9,9 +11,12 @@ import { LAB_REPLAY_KEY } from '../lab/replay'
 import { evaluateTyping, splitCode } from '../lab/typingCourse'
 import { PANEL_LIMITS } from '../layout/resize'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useUiStore } from '../stores/uiStore'
 import type { SortFrame } from '../visualizers/algorithms/sorting'
 
 const settings = useSettingsStore()
+const theme = useThemeStore()
+const ui = useUiStore()
 const SELECTED_COURSE_KEY = 'pydisc-lab-course'
 const CELEBRATION_MS = 3600
 
@@ -107,6 +112,7 @@ const typingMax = computed(() => Math.max(PANEL_LIMITS.outputMin, windowHeight.v
 
 onMounted(async () => {
   await settings.load()
+  await theme.load()
   window.addEventListener('resize', onResize)
   await loadCompletionMarks()
 })
@@ -119,12 +125,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="lab">
     <div class="realm-backdrop" />
-    <TitleBar title="Visualizer Lab" subtitle="// watch it, then type it">
+    <TitleBar data-theme-part="titlebar" title="Visualizer Lab" subtitle="// watch it, then type it">
+      <button class="btn is-ghost" @click="ui.openThemeEditor()">&#9673; Theme</button>
       <span class="overall">{{ completedCourseIds.length }} / {{ LAB_COURSES.length }} complete</span>
     </TitleBar>
 
     <div class="body" :style="{ gridTemplateColumns: `${settings.layout.labSidebarWidth}px 12px minmax(0, 1fr)` }">
-      <nav class="catalog panel">
+      <nav class="catalog panel" data-theme-part="lab">
         <div v-for="entry in groups" :key="entry.group" class="group">
           <div class="panel-title">{{ entry.group }} <span class="group-count">{{ completedCount(entry.courses) }} / {{ entry.courses.length }}</span></div>
           <ul>
@@ -155,7 +162,7 @@ onBeforeUnmount(() => {
       />
 
       <main class="main" :style="{ gridTemplateRows: `minmax(120px, 1fr) 12px ${settings.layout.labTypingHeight}px` }">
-        <section class="viz panel">
+        <section class="viz panel" data-theme-part="visualizer">
           <div class="panel-title">{{ selectedCourse.title }}<span v-if="isCompleted(selectedCourse.id)" class="done-badge">COMPLETE</span></div>
           <Transition name="celebrate">
             <div v-if="celebration" :key="celebration.id" class="celebration">
@@ -180,6 +187,7 @@ onBeforeUnmount(() => {
         />
 
         <TypingPanel
+          data-theme-part="editor"
           :course="selectedCourse"
           :font-size="Math.min(settings.editorFontSize, 17)"
           @completion="setCompleted"
@@ -187,6 +195,7 @@ onBeforeUnmount(() => {
         />
       </main>
     </div>
+    <ThemeEditor />
   </div>
 </template>
 
@@ -197,9 +206,9 @@ onBeforeUnmount(() => {
 .catalog { overflow: auto; min-height: 0; }
 .group-count { margin-left: auto; color: var(--neon-green); letter-spacing: 0.1em; }
 .group ul { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
-.catalog li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; border-left: 3px solid rgba(113, 134, 160, 0.35); background: rgba(255, 255, 255, 0.02); transition: background 0.15s, transform 0.15s, border-color 0.15s; }
-.catalog li:hover { background: rgba(25, 230, 255, 0.07); transform: translateX(3px); }
-.catalog li.selected { border-left-color: var(--neon-violet); background: linear-gradient(90deg, rgba(164, 92, 255, 0.2), transparent); }
+.catalog li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; border-left: 3px solid rgb(var(--text-dim-rgb) / 0.35); background: rgba(255, 255, 255, 0.02); transition: background 0.15s, transform 0.15s, border-color 0.15s; }
+.catalog li:hover { background: rgb(var(--neon-cyan-rgb) / 0.07); transform: translateX(3px); }
+.catalog li.selected { border-left-color: var(--neon-violet); background: linear-gradient(90deg, rgb(var(--neon-violet-rgb) / 0.2), transparent); }
 .catalog li.complete { border-left-color: var(--neon-green); }
 .mark { width: 18px; text-align: center; color: var(--text-dim); font-weight: 900; }
 .complete .mark { color: var(--neon-green); text-shadow: var(--glow-green); }
@@ -207,12 +216,12 @@ onBeforeUnmount(() => {
 .title { font-weight: 700; }
 .tagline { font-size: 11px; color: var(--text-dim); }
 .main { display: grid; min-height: 0; min-width: 0; }
-.viz { position: relative; display: flex; flex-direction: column; min-height: 0; background: rgba(6, 9, 18, 0.88); }
+.viz { position: relative; display: flex; flex-direction: column; min-height: 0; background: rgb(var(--editor-bg-rgb) / 0.88); }
 .viz-scroll { flex: 1; overflow: auto; padding: 14px 18px; }
 .done-badge { margin-left: auto; padding: 1px 8px; font-size: 9px; letter-spacing: 0.25em; color: var(--void); background: var(--neon-green); box-shadow: var(--glow-green); }
 .celebration {
   position: absolute; z-index: 5; top: 44px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none;
-  padding: 12px 28px; background: rgba(4, 5, 10, 0.92); border: 1px solid var(--neon-green); box-shadow: var(--glow-green), 0 0 60px rgba(57, 255, 136, 0.25);
+  padding: 12px 28px; background: rgb(var(--void-rgb) / 0.92); border: 1px solid var(--neon-green); box-shadow: var(--glow-green), 0 0 60px rgb(var(--neon-green-rgb) / 0.25);
 }
 .celebration-headline { font-family: var(--font-display); font-size: 20px; font-weight: 900; letter-spacing: 0.2em; color: var(--neon-green); text-shadow: var(--glow-green); }
 .celebration-detail { margin-top: 4px; font-size: 12px; color: var(--text); }

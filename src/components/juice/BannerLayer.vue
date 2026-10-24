@@ -99,7 +99,7 @@ onBeforeUnmount(() => unsubscribe?.())
 .banner-stack { position: absolute; top: 150px; right: 22px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
 .banner {
   min-width: 300px; max-width: 380px; padding: 12px 22px 12px 18px;
-  background: rgba(4, 5, 10, 0.92);
+  background: rgb(var(--void-rgb) / 0.92);
   border-right: 5px solid var(--tone);
   box-shadow: 0 0 calc(30px * var(--fx-scale)) -4px var(--tone), inset 0 0 40px -20px var(--tone);
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
@@ -137,7 +137,7 @@ onBeforeUnmount(() => unsubscribe?.())
 .combo-callout {
   position: absolute; top: 34%; left: 50%;
   font-family: var(--font-display); font-size: 54px; font-weight: 900; letter-spacing: 0.1em; white-space: nowrap;
-  color: #fff; text-shadow: var(--glow-cyan), 0 0 40px var(--neon-violet);
+  color: var(--flash); text-shadow: var(--glow-cyan), 0 0 40px var(--neon-violet);
   animation: callout 0.9s cubic-bezier(0.2, 1.4, 0.3, 1) forwards;
 }
 @keyframes callout {

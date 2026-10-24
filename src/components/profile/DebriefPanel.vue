@@ -52,8 +52,8 @@ const questProgress = (measure: (state: typeof progression.state) => number, tar
 <style scoped>
 .debrief { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
 .quests, .trophies { list-style: none; margin: 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
-.quest { padding: 9px 10px; border: 1px solid rgba(113, 134, 160, 0.25); background: rgba(4, 5, 10, 0.5); }
-.quest.done { border-color: var(--neon-violet); background: rgba(164, 92, 255, 0.1); }
+.quest { padding: 9px 10px; border: 1px solid rgb(var(--text-dim-rgb) / 0.25); background: rgb(var(--void-rgb) / 0.5); }
+.quest.done { border-color: var(--neon-violet); background: rgb(var(--neon-violet-rgb) / 0.1); }
 .quest-head { display: flex; justify-content: space-between; }
 .quest-title { font-weight: 700; }
 .quest-reward { color: var(--neon-amber); font-size: 11px; }
@@ -67,7 +67,7 @@ const questProgress = (measure: (state: typeof progression.state) => number, tar
 .trophy-icon { grid-row: span 2; color: var(--neon-amber); font-size: 16px; text-shadow: 0 0 10px var(--neon-amber); }
 .trophy-title { font-weight: 700; }
 .trophy-desc { font-size: 10px; color: var(--text-dim); }
-.stats { display: flex; justify-content: space-around; margin-top: auto; padding: 10px; border-top: 1px solid rgba(25, 230, 255, 0.16); font-size: 11px; color: var(--text-dim); }
+.stats { display: flex; justify-content: space-around; margin-top: auto; padding: 10px; border-top: 1px solid rgb(var(--neon-cyan-rgb) / 0.16); font-size: 11px; color: var(--text-dim); }
 .stats b { color: var(--neon-cyan); font-size: 15px; }
 .warning { margin: 0 12px 10px; padding: 6px 8px; font-size: 11px; color: var(--neon-red); border: 1px solid var(--neon-red); }
 </style>

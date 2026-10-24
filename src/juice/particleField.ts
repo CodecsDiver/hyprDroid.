@@ -1,3 +1,4 @@
+import { themedHue } from '../theme/applyTheme'
 interface Particle {
   x: number
   y: number
@@ -111,7 +112,7 @@ export function createParticleField(canvas: HTMLCanvasElement, getIntensity: () 
       particle.y += particle.velocityY * deltaSeconds
       const lifeFraction = particle.remainingLife / particle.totalLife
       context!.globalAlpha = lifeFraction
-      context!.fillStyle = `hsl(${particle.hue} 100% ${55 + 25 * lifeFraction}%)`
+      context!.fillStyle = `hsl(${themedHue(particle.hue)} 100% ${55 + 25 * lifeFraction}%)`
       const size = particle.size * (0.5 + lifeFraction)
       context!.fillRect(particle.x - size / 2, particle.y - size / 2, size, size)
     }
@@ -126,7 +127,7 @@ export function createParticleField(canvas: HTMLCanvasElement, getIntensity: () 
       }
       context!.globalAlpha = (1 - progress) * 0.9
       context!.lineWidth = 3 + (1 - progress) * 5
-      context!.strokeStyle = `hsl(${shockwave.hue} 100% 65%)`
+      context!.strokeStyle = `hsl(${themedHue(shockwave.hue)} 100% 65%)`
       context!.beginPath()
       context!.arc(shockwave.x, shockwave.y, shockwave.maxRadius * (1 - Math.pow(1 - progress, 3)), 0, Math.PI * 2)
       context!.stroke()

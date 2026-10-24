@@ -36,7 +36,7 @@ const curves: Curve[] = [
   { label: 'O(log n)', example: 'binary search', color: 'var(--neon-cyan)', operations: (n) => Math.log2(Math.max(n, 1)) },
   { label: 'O(n)', example: 'loop over a list', color: 'var(--neon-violet)', operations: (n) => n },
   { label: 'O(n log n)', example: 'merge sort', color: 'var(--neon-amber)', operations: (n) => n * Math.log2(Math.max(n, 1)) },
-  { label: 'O(n^2)', example: 'nested loops', color: '#ff7a3d', operations: (n) => n * n },
+  { label: 'O(n^2)', example: 'nested loops', color: 'var(--curve-n2)', operations: (n) => n * n },
   { label: 'O(2^n)', example: 'naive fib', color: 'var(--neon-red)', operations: (n) => Math.pow(2, n) },
 ]
 
@@ -61,9 +61,9 @@ const paths = computed(() =>
     <div class="stage">
       <svg :viewBox="`-10 -10 ${CHART_WIDTH + 20} ${CHART_HEIGHT + 20}`" class="chart">
         <line v-for="tick in 5" :key="tick" :x1="0" :x2="CHART_WIDTH" :y1="(CHART_HEIGHT / 5) * tick" :y2="(CHART_HEIGHT / 5) * tick" class="gridline" />
-        <path v-for="entry in paths" :key="entry.curve.label" :d="entry.d" :stroke="entry.curve.color" class="curve" />
+        <path v-for="entry in paths" :key="entry.curve.label" :d="entry.d" :style="{ stroke: entry.curve.color }" class="curve" />
         <line :x1="x(inputSize)" :x2="x(inputSize)" y1="0" :y2="CHART_HEIGHT" class="marker" />
-        <circle v-for="entry in paths" :key="`dot-${entry.curve.label}`" :cx="x(inputSize)" :cy="y(entry.atN)" r="5" :fill="entry.curve.color" />
+        <circle v-for="entry in paths" :key="`dot-${entry.curve.label}`" :cx="x(inputSize)" :cy="y(entry.atN)" r="5" :style="{ fill: entry.curve.color }" />
       </svg>
       <ul class="table">
         <li v-for="entry in paths" :key="entry.curve.label">
@@ -83,7 +83,7 @@ const paths = computed(() =>
 .toolbar label { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.15em; color: var(--text-dim); }
 b { color: var(--neon-cyan); font-size: 16px; }
 input[type='range'] { accent-color: var(--neon-violet); width: 280px; }
-.stage { display: grid; grid-template-columns: 1fr 280px; gap: 18px; align-items: start; padding: 16px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
+.stage { display: grid; grid-template-columns: 1fr 280px; gap: 18px; align-items: start; padding: 16px; background: rgb(var(--void-rgb) / 0.7); border: 1px solid rgb(var(--neon-cyan-rgb) / 0.2); }
 .chart { width: 100%; overflow: visible; }
 .gridline { stroke: rgba(255, 255, 255, 0.07); }
 .curve { fill: none; stroke-width: 2.5; }

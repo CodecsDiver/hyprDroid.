@@ -28,11 +28,11 @@ const workspace = useWorkspaceStore()
 </template>
 
 <style scoped>
-.scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgba(4, 5, 10, 0.8); }
+.scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgb(var(--void-rgb) / 0.8); }
 .dialog { width: 520px; background: var(--hull-raised); }
 .content { padding: 16px 20px 20px; line-height: 1.6; }
 .content p { margin: 0 0 12px; }
 .warn { color: var(--neon-amber); }
-code { padding: 1px 6px; background: rgba(25, 230, 255, 0.12); color: var(--neon-cyan); user-select: text; -webkit-user-select: text; }
+code { padding: 1px 6px; background: rgb(var(--neon-cyan-rgb) / 0.12); color: var(--neon-cyan); user-select: text; -webkit-user-select: text; }
 .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 18px; }
 </style>

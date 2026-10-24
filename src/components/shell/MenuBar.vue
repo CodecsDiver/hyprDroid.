@@ -19,7 +19,7 @@ const MENUS: ReadonlyArray<{ label: string; entries: MenuEntry[] }> = [
       'view.palette', '---', 'view.missions', 'view.quests', 'view.output', 'view.focus', '---',
       'view.zoomIn', 'view.zoomOut', 'view.zoomReset', '---',
       'view.fx.off', 'view.fx.low', 'view.fx.medium', 'view.fx.high', '---',
-      'view.sound', 'view.shake', '---', 'view.resetLayout', 'view.fullscreen',
+      'view.sound', 'view.shake', '---', 'view.theme', 'view.resetLayout', 'view.fullscreen',
     ],
   },
   { label: 'Run', entries: ['run.run', 'run.check', '---', 'run.clear'] },
@@ -111,28 +111,28 @@ onBeforeUnmount(() => {
 <style scoped>
 .menubar {
   position: relative; z-index: 20; display: flex; align-items: center; height: 30px; padding: 0 8px;
-  background: linear-gradient(180deg, #0f1424, #0a0e1a); border-bottom: 1px solid rgba(25, 230, 255, 0.22);
+  background: linear-gradient(180deg, var(--menubar-top), var(--menubar-bottom)); border-bottom: 1px solid rgb(var(--neon-cyan-rgb) / 0.22);
 }
 .menu { position: relative; }
 .menu-title {
   height: 30px; padding: 0 12px; border: 0; background: transparent; color: var(--text); cursor: pointer;
   font-size: 12px; letter-spacing: 0.04em;
 }
-.menu-title:hover, .menu-title.open { background: rgba(25, 230, 255, 0.14); color: var(--neon-cyan); }
+.menu-title:hover, .menu-title.open { background: rgb(var(--neon-cyan-rgb) / 0.14); color: var(--neon-cyan); }
 .dropdown {
   position: absolute; top: 30px; left: 0; min-width: 300px; margin: 0; padding: 6px 0; list-style: none;
   background: var(--hull-raised); border: 1px solid var(--glass-edge); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7), var(--glow-cyan);
 }
 .item { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; cursor: pointer; font-size: 12px; }
-.item:hover:not(.disabled) { background: rgba(25, 230, 255, 0.16); }
+.item:hover:not(.disabled) { background: rgb(var(--neon-cyan-rgb) / 0.16); }
 .item.disabled { opacity: 0.38; cursor: default; }
 .check { text-align: center; color: var(--neon-green); }
 .shortcut { color: var(--text-dim); font-size: 11px; padding-left: 24px; }
-.separator { height: 1px; margin: 5px 0; background: rgba(25, 230, 255, 0.16); }
+.separator { height: 1px; margin: 5px 0; background: rgb(var(--neon-cyan-rgb) / 0.16); }
 .spacer { flex: 1; }
 .palette-button {
   display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 10px; cursor: pointer; font-size: 11px;
-  color: var(--text-dim); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(113, 134, 160, 0.35);
+  color: var(--text-dim); background: rgba(255, 255, 255, 0.04); border: 1px solid rgb(var(--text-dim-rgb) / 0.35);
 }
 .palette-button:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); }
 </style>

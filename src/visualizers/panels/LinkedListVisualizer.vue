@@ -122,18 +122,18 @@ if (replayRequest) {
 .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .toolbar label { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.18em; color: var(--text-dim); }
 input[type='number'] { width: 80px; background: var(--hull-raised); color: var(--neon-amber); border: 1px solid var(--glass-edge); padding: 6px 8px; font-family: inherit; font-size: 15px; }
-.chain { display: flex; align-items: center; gap: 12px; padding: 36px 20px; overflow-x: auto; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); min-height: 140px; }
+.chain { display: flex; align-items: center; gap: 12px; padding: 36px 20px; overflow-x: auto; background: rgb(var(--void-rgb) / 0.7); border: 1px solid rgb(var(--neon-cyan-rgb) / 0.2); min-height: 140px; }
 .nodes { display: flex; align-items: center; }
 .node-wrap { display: flex; align-items: center; }
 .node { display: flex; border: 1px solid var(--neon-cyan); transition: all 0.25s; }
-.data { padding: 12px 18px; font-size: 20px; font-weight: 700; background: rgba(25, 230, 255, 0.12); }
+.data { padding: 12px 18px; font-size: 20px; font-weight: 700; background: rgb(var(--neon-cyan-rgb) / 0.12); }
 .next { padding: 12px 10px; font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); border-left: 1px solid var(--neon-cyan); display: grid; place-items: center; }
 .node.highlighted { border-color: var(--neon-amber); box-shadow: 0 0 calc(18px * var(--fx-scale)) var(--neon-amber); transform: translateY(-8px); }
-.node.highlighted .data { background: rgba(255, 200, 61, 0.28); }
+.node.highlighted .data { background: rgb(var(--neon-amber-rgb) / 0.28); }
 .arrow { padding: 0 10px; font-size: 22px; color: var(--neon-violet); }
 .head-tag, .null-tag { font-size: 10px; letter-spacing: 0.25em; color: var(--neon-green); }
 .null-tag { color: var(--text-dim); }
-.console { padding: 10px 14px; color: var(--neon-cyan); background: rgba(4, 5, 10, 0.7); border-left: 3px solid var(--neon-cyan); min-height: 40px; }
+.console { padding: 10px 14px; color: var(--neon-cyan); background: rgb(var(--void-rgb) / 0.7); border-left: 3px solid var(--neon-cyan); min-height: 40px; }
 .node-enter-active { animation: node-in 0.4s cubic-bezier(0.2, 1.5, 0.3, 1); }
 .node-leave-active { transition: opacity 0.25s, transform 0.25s; position: absolute; }
 .node-leave-to { opacity: 0; transform: translateY(30px); }

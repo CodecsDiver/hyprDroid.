@@ -89,9 +89,9 @@ input[type='range'] { accent-color: var(--neon-violet); }
 .algorithm-name { color: var(--neon-cyan); letter-spacing: 0.1em; }
 .your-code { padding: 2px 8px; font-size: 10px; letter-spacing: 0.2em; font-weight: 700; color: var(--void); background: var(--neon-green); box-shadow: var(--glow-green); }
 .complexity { margin-left: auto; color: var(--neon-amber); font-weight: 700; }
-.stage { flex: 1; min-height: 220px; display: flex; align-items: flex-end; gap: 2px; padding: 12px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
-.bar { position: relative; background: linear-gradient(180deg, var(--neon-violet), rgba(164, 92, 255, 0.35)); transition: height 0.12s, background 0.12s; }
-.bar.active { background: linear-gradient(180deg, var(--neon-amber), rgba(255, 200, 61, 0.4)); box-shadow: 0 0 calc(14px * var(--fx-scale)) var(--neon-amber); }
-.bar.settled { background: linear-gradient(180deg, var(--neon-green), rgba(57, 255, 136, 0.35)); }
+.stage { flex: 1; min-height: 220px; display: flex; align-items: flex-end; gap: 2px; padding: 12px; background: rgb(var(--void-rgb) / 0.7); border: 1px solid rgb(var(--neon-cyan-rgb) / 0.2); }
+.bar { position: relative; background: linear-gradient(180deg, var(--neon-violet), rgb(var(--neon-violet-rgb) / 0.35)); transition: height 0.12s, background 0.12s; }
+.bar.active { background: linear-gradient(180deg, var(--neon-amber), rgb(var(--neon-amber-rgb) / 0.4)); box-shadow: 0 0 calc(14px * var(--fx-scale)) var(--neon-amber); }
+.bar.settled { background: linear-gradient(180deg, var(--neon-green), rgb(var(--neon-green-rgb) / 0.35)); }
 .bar-label { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--text-dim); }
 </style>

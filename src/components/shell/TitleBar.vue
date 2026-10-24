@@ -38,8 +38,8 @@ const close = () => withWindow((w) => w.close())
   gap: 16px;
   height: 38px;
   padding: 0 0 0 14px;
-  background: linear-gradient(180deg, #1b2236 0%, #0c101c 100%);
-  border-bottom: 1px solid rgba(25, 230, 255, 0.35);
+  background: linear-gradient(180deg, var(--titlebar-top) 0%, var(--titlebar-bottom) 100%);
+  border-bottom: 1px solid rgb(var(--neon-cyan-rgb) / 0.35);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 4px 18px rgba(0, 0, 0, 0.6);
 }
 .brand { display: flex; align-items: center; gap: 10px; cursor: default; }
@@ -64,6 +64,6 @@ const close = () => withWindow((w) => w.close())
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.control:hover { background: rgba(25, 230, 255, 0.14); color: var(--neon-cyan); }
-.control-close:hover { background: var(--neon-red); color: #fff; }
+.control:hover { background: rgb(var(--neon-cyan-rgb) / 0.14); color: var(--neon-cyan); }
+.control-close:hover { background: var(--neon-red); color: var(--flash); }
 </style>

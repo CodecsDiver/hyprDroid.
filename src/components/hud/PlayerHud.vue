@@ -85,7 +85,7 @@ watch(
   place-items: center;
   width: 62px;
   height: 62px;
-  background: linear-gradient(145deg, rgba(57, 255, 136, 0.28), rgba(164, 92, 255, 0.3));
+  background: linear-gradient(145deg, rgb(var(--neon-green-rgb) / 0.28), rgb(var(--neon-violet-rgb) / 0.3));
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   box-shadow: inset 0 0 0 2px var(--neon-green);
 }
@@ -95,7 +95,7 @@ watch(
   font-family: var(--font-display);
   font-size: 26px;
   font-weight: 900;
-  color: #fff;
+  color: var(--flash);
   text-shadow: var(--glow-green);
 }
 .badge.popping { animation: badge-pop 0.9s cubic-bezier(0.2, 1.6, 0.3, 1); }
@@ -115,7 +115,7 @@ watch(
 .xp-total { margin-top: 4px; font-size: 16px; font-weight: 700; color: var(--neon-green); }
 .xp-total .mono-dim { font-size: 9px; letter-spacing: 0.2em; font-weight: 400; }
 .xp-total.popping { animation: xp-pop 0.4s ease-out; }
-@keyframes xp-pop { 0% { transform: scale(calc(1 + 0.25 * var(--fx-scale))); color: #fff; } 100% { transform: scale(1); } }
+@keyframes xp-pop { 0% { transform: scale(calc(1 + 0.25 * var(--fx-scale))); color: var(--flash); } 100% { transform: scale(1); } }
 
 .combo {
   position: relative;
@@ -125,7 +125,7 @@ watch(
   gap: 10px;
   padding: 6px 10px 12px;
   color: var(--text-dim);
-  border: 1px solid rgba(113, 134, 160, 0.25);
+  border: 1px solid rgb(var(--text-dim-rgb) / 0.25);
   transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .combo-count { font-family: var(--font-display); font-size: 30px; font-weight: 900; min-width: 50px; text-align: right; }
@@ -133,11 +133,11 @@ watch(
 .combo-multiplier { font-family: var(--font-display); font-size: 18px; font-weight: 800; }
 .combo-decay { position: absolute; left: 6px; right: 6px; bottom: 4px; height: 3px; background: rgba(255, 255, 255, 0.08); }
 .combo-decay-fill { height: 100%; transform-origin: left; background: currentColor; }
-.combo.active { color: var(--neon-green); border-color: var(--neon-green); box-shadow: var(--glow-green); }
-.combo.tier-2 { color: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
-.combo.tier-3 { color: var(--neon-violet); border-color: var(--neon-violet); box-shadow: var(--glow-violet); }
-.combo.tier-4 { color: var(--neon-amber); border-color: var(--neon-amber); }
-.combo.tier-5 { color: var(--neon-red); border-color: var(--neon-red); box-shadow: var(--glow-red); animation: combo-shiver 0.12s linear infinite; }
+.combo.active { color: var(--combo-t1); border-color: var(--combo-t1); box-shadow: 0 0 calc(var(--glow-size) * var(--fx-scale)) var(--combo-t1); }
+.combo.tier-2 { color: var(--combo-t2); border-color: var(--combo-t2); box-shadow: 0 0 calc(var(--glow-size) * var(--fx-scale)) var(--combo-t2); }
+.combo.tier-3 { color: var(--combo-t3); border-color: var(--combo-t3); box-shadow: 0 0 calc(var(--glow-size) * var(--fx-scale)) var(--combo-t3); }
+.combo.tier-4 { color: var(--combo-t4); border-color: var(--combo-t4); }
+.combo.tier-5 { color: var(--combo-t5); border-color: var(--combo-t5); box-shadow: 0 0 calc(var(--glow-size) * var(--fx-scale)) var(--combo-t5); animation: combo-shiver 0.12s linear infinite; }
 :root[data-fx='off'] .combo.tier-5 { animation: none; }
 @keyframes combo-shiver {
   0% { transform: translate(calc(1px * var(--fx-scale)), 0); }

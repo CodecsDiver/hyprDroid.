@@ -40,7 +40,7 @@ const intensities: AnimationIntensity[] = ['off', 'low', 'medium', 'high']
 .body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
 .label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
 .segments { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-.segment { padding: 7px 0; text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; cursor: pointer; background: transparent; border: 1px solid rgba(113, 134, 160, 0.4); color: var(--text-dim); }
+.segment { padding: 7px 0; text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; cursor: pointer; background: transparent; border: 1px solid rgb(var(--text-dim-rgb) / 0.4); color: var(--text-dim); }
 .segment.on { color: var(--void); background: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
 .toggle { display: flex; gap: 8px; align-items: center; cursor: pointer; }
 .toggle input { accent-color: var(--neon-green); }

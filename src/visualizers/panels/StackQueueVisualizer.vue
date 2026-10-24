@@ -103,18 +103,18 @@ if (replayRequest) {
 <style scoped>
 .viz { display: flex; flex-direction: column; gap: 16px; }
 .structures { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
-.structure { padding-bottom: 14px; background: rgba(4, 5, 10, 0.7); }
+.structure { padding-bottom: 14px; background: rgb(var(--void-rgb) / 0.7); }
 .stack-box { display: flex; align-items: flex-end; justify-content: center; min-height: 360px; padding: 16px; position: relative; }
 .stack-items { display: flex; flex-direction: column-reverse; gap: 6px; width: 140px; }
 .queue-box { display: flex; align-items: center; gap: 12px; min-height: 150px; padding: 16px; position: relative; }
 .queue-items { display: flex; gap: 6px; flex: 1; justify-content: center; }
-.item { position: relative; display: grid; place-items: center; min-width: 54px; height: 44px; padding: 0 14px; font-size: 17px; font-weight: 700; background: rgba(164, 92, 255, 0.2); border: 1px solid var(--neon-violet); transition: all 0.25s; }
-.item.top { background: rgba(57, 255, 136, 0.2); border-color: var(--neon-green); box-shadow: var(--glow-green); }
+.item { position: relative; display: grid; place-items: center; min-width: 54px; height: 44px; padding: 0 14px; font-size: 17px; font-weight: 700; background: rgb(var(--neon-violet-rgb) / 0.2); border: 1px solid var(--neon-violet); transition: all 0.25s; }
+.item.top { background: rgb(var(--neon-green-rgb) / 0.2); border-color: var(--neon-green); box-shadow: var(--glow-green); }
 .tag { position: absolute; left: calc(100% + 10px); font-size: 9px; letter-spacing: 0.2em; color: var(--neon-green); }
 .end { font-size: 9px; letter-spacing: 0.25em; color: var(--text-dim); }
 .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-dim); letter-spacing: 0.3em; pointer-events: none; }
 .actions { display: flex; justify-content: center; gap: 12px; }
-.console { padding: 10px 14px; color: var(--neon-cyan); background: rgba(4, 5, 10, 0.7); border-left: 3px solid var(--neon-cyan); min-height: 40px; }
+.console { padding: 10px 14px; color: var(--neon-cyan); background: rgb(var(--void-rgb) / 0.7); border-left: 3px solid var(--neon-cyan); min-height: 40px; }
 .item-enter-active { animation: item-in 0.35s cubic-bezier(0.2, 1.5, 0.3, 1); }
 .item-leave-active { transition: opacity 0.2s, transform 0.2s; position: absolute; }
 .item-leave-to { opacity: 0; transform: translateY(-20px) scale(0.8); }

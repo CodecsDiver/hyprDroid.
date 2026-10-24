@@ -91,15 +91,15 @@ function onKeydown(event: KeyboardEvent): void {
 </template>
 
 <style scoped>
-.scrim { position: fixed; inset: 0; z-index: 95; display: flex; justify-content: center; align-items: flex-start; padding-top: 12vh; background: rgba(4, 5, 10, 0.55); }
+.scrim { position: fixed; inset: 0; z-index: 95; display: flex; justify-content: center; align-items: flex-start; padding-top: 12vh; background: rgb(var(--void-rgb) / 0.55); }
 .palette { width: min(680px, 92vw); background: var(--hull-raised); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), var(--glow-cyan); }
 .search {
-  width: 100%; padding: 14px 18px; font-family: inherit; font-size: 15px; color: var(--text); background: rgba(4, 5, 10, 0.8);
-  border: 0; border-bottom: 1px solid rgba(25, 230, 255, 0.3); outline: none; user-select: text; -webkit-user-select: text;
+  width: 100%; padding: 14px 18px; font-family: inherit; font-size: 15px; color: var(--text); background: rgb(var(--void-rgb) / 0.8);
+  border: 0; border-bottom: 1px solid rgb(var(--neon-cyan-rgb) / 0.3); outline: none; user-select: text; -webkit-user-select: text;
 }
 .results { list-style: none; margin: 0; padding: 6px 0; max-height: 52vh; overflow: auto; }
 .result { display: grid; grid-template-columns: 62px 1fr auto auto; gap: 12px; align-items: center; padding: 8px 18px; cursor: pointer; }
-.result.highlighted { background: rgba(25, 230, 255, 0.18); box-shadow: inset 3px 0 0 var(--neon-cyan); }
+.result.highlighted { background: rgb(var(--neon-cyan-rgb) / 0.18); box-shadow: inset 3px 0 0 var(--neon-cyan); }
 .category { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--neon-violet); }
 .title { color: var(--text); }
 .state { font-size: 10px; color: var(--neon-green); text-transform: uppercase; letter-spacing: 0.12em; }

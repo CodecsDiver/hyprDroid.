@@ -20,7 +20,7 @@ export interface SandboxStatus {
   bubblewrapUsable: boolean
 }
 
-export type DocumentName = 'settings' | 'progression'
+export type DocumentName = 'settings' | 'progression' | 'theme'
 
 /**
  * Two runtimes share one UI. In the desktop app (Tauri) the Rust backend stores files on disk and runs
@@ -164,6 +164,17 @@ export async function runChecks(
     return runOnWeb({ ...webProjectFiles(projectId), '_checks.py': testSource }, '_checks.py', { PYDISC_NONCE: nonce })
   }
   return invoke<RunOutcome>('run_checks', { projectId, testSource, nonce, allowUnsandboxed })
+}
+
+/** The colour tool linked from the theme editor. The address is fixed here and in the Rust command. */
+export const THEME_SITE_URL = 'https://colorthemepark.netlify.app'
+
+export async function openThemeSite(): Promise<void> {
+  if (!isNativeRuntime()) {
+    window.open(THEME_SITE_URL, '_blank', 'noopener,noreferrer')
+    return
+  }
+  await invoke('open_theme_site')
 }
 
 export async function openLabWindow(): Promise<void> {

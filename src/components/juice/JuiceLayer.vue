@@ -87,12 +87,12 @@ function handle(event: JuiceEvent): void {
       field.burst(x, y, { count: 120, hues: [HUE_GREEN, HUE_CYAN], speed: 560, size: 4 })
       field.ring(x, y, HUE_GREEN, 220)
       later(120, () => field?.ring(x, y, HUE_CYAN, 300))
-      flashScreen('rgba(57, 255, 136, 0.18)')
+      flashScreen('rgb(var(--neon-green-rgb) / 0.18)')
       shake(8, 420)
       break
     }
     case 'objective-failed':
-      flashScreen('rgba(255, 61, 110, 0.2)')
+      flashScreen('rgb(var(--neon-red-rgb) / 0.2)')
       shake(5, 320)
       break
     case 'quest-completed': {
@@ -120,7 +120,7 @@ function handle(event: JuiceEvent): void {
       break
     }
     case 'project-completed':
-      flashScreen('rgba(164, 92, 255, 0.28)')
+      flashScreen('rgb(var(--neon-violet-rgb) / 0.28)')
       shake(12, 600)
       fireworks(8)
       break

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { themedHue } from '../../theme/applyTheme'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { describeLevelUp } from '../../gamification/levelUpTier'
 import { onJuice } from '../../juice/juiceBus'
@@ -19,14 +20,14 @@ let unsubscribe: (() => void) | undefined
 let hideTimer: ReturnType<typeof setTimeout> | undefined
 const pendingTimers = new Set<ReturnType<typeof setTimeout>>()
 
-const hsl = (hue: number, lightness = 60) => `hsl(${hue} 100% ${lightness}%)`
+const hsl = (hue: number, lightness = 60) => `hsl(${themedHue(hue)} 100% ${lightness}%)`
 const colourVariables = computed(() => {
   const hues = style.value?.hues ?? [145, 188]
   return {
     '--lv-a': hsl(hues[0]),
     '--lv-b': hsl(hues[1 % hues.length]),
     '--lv-c': hsl(hues[2 % hues.length]),
-    '--lv-glow-a': `hsl(${hues[0]} 100% 60% / 0.8)`,
+    '--lv-glow-a': `hsl(${themedHue(hues[0])} 100% 60% / 0.8)`,
   }
 })
 
@@ -77,7 +78,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .takeover {
   position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; overflow: hidden;
-  background: radial-gradient(circle at center, var(--lv-glow-a), rgba(4, 5, 10, 0.92) 62%);
+  background: radial-gradient(circle at center, var(--lv-glow-a), rgb(var(--void-rgb) / 0.92) 62%);
   backdrop-filter: blur(calc(6px * var(--fx-scale)));
 }
 .takeover-enter-active { animation: takeover-in 0.45s ease-out; }
@@ -110,7 +111,7 @@ onBeforeUnmount(() => {
 .level-up-core { position: relative; text-align: center; }
 .kicker { font-size: 13px; letter-spacing: 0.5em; color: var(--lv-a); text-shadow: 0 0 12px var(--lv-a); animation: fade-rise 0.6s 0.1s both; }
 .headline {
-  font-family: var(--font-display); font-size: 74px; font-weight: 900; letter-spacing: 0.18em; color: #fff;
+  font-family: var(--font-display); font-size: 74px; font-weight: 900; letter-spacing: 0.18em; color: var(--flash);
   text-shadow: 0 0 20px var(--lv-b), 0 0 60px var(--lv-c);
   animation: headline-slam 0.7s cubic-bezier(0.2, 1.5, 0.3, 1) 0.15s both;
 }
@@ -118,7 +119,7 @@ onBeforeUnmount(() => {
 .tier-legend .headline { font-size: 96px; animation-name: headline-slam, legend-pulse; animation-duration: 0.7s, 1.4s; animation-delay: 0.15s, 0.9s; animation-iteration-count: 1, infinite; }
 .number {
   font-family: var(--font-display); font-size: 190px; line-height: 1; font-weight: 900;
-  background: linear-gradient(180deg, #fff 0%, var(--lv-a) 45%, var(--lv-b) 100%);
+  background: linear-gradient(180deg, var(--flash) 0%, var(--lv-a) 45%, var(--lv-b) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 0 calc(24px * var(--fx-scale)) var(--lv-a));
   animation: number-slam 0.9s cubic-bezier(0.15, 1.6, 0.3, 1) 0.4s both;

@@ -70,12 +70,12 @@ function cellClass(index: number): string {
 input[type='number'] { width: 80px; background: var(--hull-raised); color: var(--neon-amber); border: 1px solid var(--glass-edge); padding: 6px 8px; font-family: inherit; font-size: 15px; }
 .compare { margin-left: auto; color: var(--text-dim); }
 .compare b { color: var(--neon-green); }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; padding: 16px; background: rgba(4, 5, 10, 0.7); border: 1px solid rgba(25, 230, 255, 0.2); }
-.cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 6px; border: 1px solid rgba(113, 134, 160, 0.4); transition: opacity 0.25s, transform 0.25s, background 0.25s; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; padding: 16px; background: rgb(var(--void-rgb) / 0.7); border: 1px solid rgb(var(--neon-cyan-rgb) / 0.2); }
+.cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 6px; border: 1px solid rgb(var(--text-dim-rgb) / 0.4); transition: opacity 0.25s, transform 0.25s, background 0.25s; }
 .value { font-size: 16px; font-weight: 700; }
 .marker { height: 12px; font-size: 9px; letter-spacing: 0.18em; color: var(--neon-cyan); }
 .cell.discarded { opacity: 0.18; transform: scale(0.92); }
-.cell.candidate { border-color: var(--neon-cyan); background: rgba(25, 230, 255, 0.06); }
-.cell.middle { border-color: var(--neon-amber); background: rgba(255, 200, 61, 0.18); box-shadow: 0 0 calc(16px * var(--fx-scale)) var(--neon-amber); transform: translateY(-6px); }
-.cell.found { border-color: var(--neon-green); background: rgba(57, 255, 136, 0.25); box-shadow: var(--glow-green); transform: translateY(-8px) scale(1.08); }
+.cell.candidate { border-color: var(--neon-cyan); background: rgb(var(--neon-cyan-rgb) / 0.06); }
+.cell.middle { border-color: var(--neon-amber); background: rgb(var(--neon-amber-rgb) / 0.18); box-shadow: 0 0 calc(16px * var(--fx-scale)) var(--neon-amber); transform: translateY(-6px); }
+.cell.found { border-color: var(--neon-green); background: rgb(var(--neon-green-rgb) / 0.25); box-shadow: var(--glow-green); transform: translateY(-8px) scale(1.08); }
 </style>
