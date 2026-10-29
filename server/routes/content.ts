@@ -6,7 +6,7 @@ import { validateRecipe } from '../../src/domain/spells'
 import { OBJECT_ID_PATTERN } from '../../src/domain/validate'
 import type { LoveNote, ReactionPreset, SpellRecipe, Sticker, FileMeta } from '../../src/shared/types'
 import { ApiError } from '../http'
-import { bump, clean, getValue, iso, listValues, partnerOf, requireObject, update, uuidParam, validated } from '../lib'
+import { bump, clean, getValue, iso, isoDay, listValues, partnerOf, realDay, requireObject, update, uuidParam, validated } from '../lib'
 import type { Ctx, Router } from '../router'
 import { emitEvent } from './events'
 import { deleteFile } from './files'
@@ -78,7 +78,15 @@ export function registerContent(router: Router): void {
 
   router.get('/notes', async (req, ctx) => {
     const notes = await listValues<HiddenNote & { createdAt: string }>(ctx.store, 'notes/')
-    return newestFirst(notes.filter((n) => n.authorId === req.user.id || n.recipientId === req.user.id)).slice(0, 200)
+    const today = isoDay(ctx.now())
+    return newestFirst(notes.filter((n) => n.authorId === req.user.id || n.recipientId === req.user.id))
+      .slice(0, 200)
+      .map((n) => {
+        const unlockOn = n.unlockOn ?? null
+        const sealed = unlockOn !== null && today < unlockOn
+        // The recipient never receives the text of a sealed note, not even hidden in the response.
+        return n.recipientId === req.user.id && sealed ? { ...n, unlockOn, sealed, body: '' } : { ...n, unlockOn, sealed }
+      })
   })
 
   router.post('/notes', async (req, ctx) => {
@@ -91,6 +99,11 @@ export function registerContent(router: Router): void {
     if (!NOTE_REVEAL_IDS.includes(reveal as never)) throw new ApiError(400, 'invalid_payload', 'reveal')
     const text = clean(body.body, 'body', { max: 2000, required: true })
     const openWhen = clean(body.openWhen, 'openWhen', { max: 60 })
+    let unlockOn: string | null = null
+    if (body.unlockOn !== undefined && body.unlockOn !== null && body.unlockOn !== '') {
+      unlockOn = realDay(body.unlockOn, 'unlockOn')
+      if (unlockOn < isoDay(ctx.now() - 86_400_000) || unlockOn > isoDay(ctx.now() + 366 * 86_400_000)) throw new ApiError(400, 'invalid_payload', 'unlockOn')
+    }
 
     const idemKey = `noteidem/${req.user.id}/${clientNoteId}`
     const existing = await getValue<{ id: string }>(ctx.store, idemKey)
@@ -100,7 +113,7 @@ export function registerContent(router: Router): void {
     }
     const note: HiddenNote = {
       id: existing?.id ?? ctx.uuid(), authorId: req.user.id, recipientId: partner.id, objectId, body: text, openWhen: openWhen || null,
-      reveal: reveal as HiddenNote['reveal'], createdAt: iso(ctx.now()), readAt: null,
+      reveal: reveal as HiddenNote['reveal'], createdAt: iso(ctx.now()), readAt: null, unlockOn,
     }
     await ctx.store.put(idemKey, { id: note.id }, { ifNew: true })
     await ctx.store.put(`notes/${note.id}`, note, { ifNew: true })
@@ -114,6 +127,7 @@ export function registerContent(router: Router): void {
     const id = uuidParam(req.params.id)
     const note = await getValue<HiddenNote>(ctx.store, `notes/${id}`)
     if (!note || note.recipientId !== req.user.id) throw new ApiError(404, 'not_found')
+    if (note.unlockOn && isoDay(ctx.now()) < note.unlockOn) throw new ApiError(409, 'sealed')
     const updated = await update<HiddenNote>(ctx.store, `notes/${id}`, (n) => (n ? { ...n, readAt: n.readAt ?? iso(ctx.now()) } : undefined))
     await bump(ctx, 'hidden_notes')
     return updated

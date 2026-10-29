@@ -157,6 +157,28 @@ const BUILDERS: Record<string, Builder> = {
     part(g, box(0.1, 0.1, 0.04), 0xd8c4a0, [0, 0.3, 0.27])
     g.rotation.y = 0.35
   },
+  obj_calendar(g) {
+    part(g, box(0.46, 0.56, 0.04), 0xfff3dc, [0, 0, 0])
+    part(g, box(0.46, 0.13, 0.05), 0xd94a6a, [0, 0.215, 0.005])
+    for (let row = 0; row < 3; row++) for (let col = 0; col < 4; col++) part(g, box(0.07, 0.06, 0.02), row === 1 && col === 2 ? 0xff7aaa : 0xe6d5b8, [-0.15 + col * 0.1, 0.07 - row * 0.1, 0.03])
+    part(g, ball(0.02), 0xb8323f, [-0.12, 0.28, 0.03])
+    part(g, ball(0.02), 0xb8323f, [0.12, 0.28, 0.03])
+  },
+  obj_chalkboard(g) {
+    part(g, box(0.05, 0.62, 0.92), 0x6e3e22, [0, 0, 0])
+    part(g, box(0.03, 0.5, 0.8), 0x23372e, [0.02, 0, 0])
+    for (let i = 0; i < 3; i++) part(g, box(0.01, 0.015, 0.5 - i * 0.12), 0xf2f0e4, [0.04, 0.14 - i * 0.1, -0.05 + i * 0.06])
+    part(g, box(0.06, 0.03, 0.2), 0xf2f0e4, [0.05, -0.34, 0.3])
+    g.rotation.y = 0
+  },
+  obj_postbox(g) {
+    part(g, cyl(0.04, 0.05, 0.7, 10), 0x4b2b19, [0, 0.35, 0])
+    part(g, box(0.34, 0.26, 0.22), 0xd94a4a, [0, 0.82, 0])
+    part(g, new CylinderGeometry(0.11, 0.11, 0.34, 14, 1, false, 0, Math.PI), 0xd94a4a, [0, 0.95, 0], { rotation: [0, 0, Math.PI / 2] })
+    part(g, box(0.2, 0.03, 0.02), 0x2a1f26, [0, 0.84, 0.115])
+    part(g, box(0.1, 0.1, 0.01), 0xfff3dc, [0.05, 0.9, 0.12], { rotation: [0, 0, 0.3] })
+    g.rotation.y = -0.5
+  },
   obj_ceiling_lamp(g) {
     part(g, cyl(0.014, 0.014, 0.28, 10), 0x5c4450, [0, 0.14, 0])
     part(g, cyl(0.06, 0.095, 0.05, 12), 0x7c5968, [0, 0.29, 0])

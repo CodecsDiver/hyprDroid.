@@ -3,12 +3,12 @@
 export type ErrorCode =
   | 'not_authenticated' | 'no_partner' | 'invalid_payload' | 'invalid_kind' | 'invalid_mood' | 'rate_limited'
   | 'recipient_declined' | 'consent_required' | 'not_found' | 'limit_reached' | 'permission' | 'validation'
-  | 'invalid_credentials' | 'locked' | 'too_large' | 'conflict' | 'immutable' | 'server_not_configured' | 'csrf'
+  | 'sealed' | 'invalid_credentials' | 'locked' | 'too_large' | 'conflict' | 'immutable' | 'server_not_configured' | 'csrf'
   | 'network' | 'unknown'
 
 const KNOWN_CODES: ReadonlySet<string> = new Set<ErrorCode>([
   'not_authenticated', 'no_partner', 'invalid_payload', 'invalid_kind', 'invalid_mood', 'rate_limited',
-  'recipient_declined', 'consent_required', 'not_found', 'limit_reached', 'invalid_credentials', 'locked', 'too_large', 'conflict', 'immutable',
+  'recipient_declined', 'consent_required', 'not_found', 'limit_reached', 'sealed', 'invalid_credentials', 'locked', 'too_large', 'conflict', 'immutable',
   'server_not_configured', 'csrf', 'permission',
 ])
 
@@ -29,7 +29,8 @@ const USER_MESSAGES: Record<ErrorCode, string> = {
   locked: 'Too many attempts. Please wait a few minutes and try again.',
   too_large: 'That is too large.',
   conflict: 'Something changed at the same moment. Please try again.',
-  immutable: 'Archived items can never be changed.',
+  immutable: 'That can not be changed any more.',
+  sealed: 'That note is still sealed. It opens on the day it was set for.',
   server_not_configured: 'The server has not been set up yet.',
   csrf: 'The request was blocked for your safety. Reload the page and try again.',
   network: 'You appear to be offline. We will keep trying.',
@@ -80,3 +81,6 @@ export function toAppError(error: unknown): AppError {
   if (typeof e.status === 'number' && e.status >= 500) return new AppError('network', message, { cause: error })
   return new AppError('unknown', message, { cause: error })
 }
+
+/** An error whose message is meant to be shown to the person as written (the toast uses it instead of a generic line). */
+export const friendly = (message: string): Error => Object.assign(new Error(message), { name: 'ValidationError' })

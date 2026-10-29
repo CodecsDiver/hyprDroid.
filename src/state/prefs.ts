@@ -17,10 +17,13 @@ interface Prefs {
   quality: QualityPreference
   lampOn: boolean
   mischiefPaused: boolean
+  /** SoundCloud album/playlist/track link to start when you come in (empty: nothing is ever contacted). */
+  entranceUrl: string
+  entranceOn: boolean
 }
 
 const KEY = 'signalhome.prefs.v1'
-const DEFAULTS: Prefs = { soundOn: true, volume: 0.8, motion: 'auto', quality: 'auto', lampOn: false, mischiefPaused: false }
+const DEFAULTS: Prefs = { soundOn: true, volume: 0.8, motion: 'auto', quality: 'auto', lampOn: false, mischiefPaused: false, entranceUrl: '', entranceOn: false }
 
 function load(): Prefs {
   try {
@@ -34,6 +37,8 @@ function load(): Prefs {
       quality: parsed.quality === 'low' || parsed.quality === 'medium' || parsed.quality === 'high' ? parsed.quality : 'auto',
       lampOn: parsed.lampOn === true,
       mischiefPaused: parsed.mischiefPaused === true,
+      entranceUrl: typeof parsed.entranceUrl === 'string' ? parsed.entranceUrl.slice(0, 300) : '',
+      entranceOn: parsed.entranceOn === true,
     }
   } catch {
     return { ...DEFAULTS } // storage unavailable (private mode, blocked): run with defaults

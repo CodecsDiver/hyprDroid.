@@ -6,7 +6,9 @@ import { home, myName, partnerName, updateSettings } from '@/state/household'
 import { canInstall, promptInstall } from '@/state/install'
 import { notificationsSupported, requestNotificationPermission } from '@/state/notifications'
 import { prefs } from '@/state/prefs'
-import { eraseEverything } from '@/local/backend'
+import { entrance, parseSoundCloudUrl, startEntranceMusic, stopEntranceMusic } from '@/audio/entrance'
+import { backupFileName, decodeBackup } from '@/local/backup'
+import { eraseEverything, makeBackup, restoreBackup } from '@/local/backend'
 import { switchPerson } from '@/state/session'
 import { openPanel } from '@/state/ui'
 import { showToast } from '@/state/toasts'
@@ -24,6 +26,45 @@ const save = useAction(async (changes: Partial<UserSettings>) => {
 })
 const leave = useAction(async () => {
   await switchPerson()
+})
+const entranceLink = ref(prefs.entranceUrl)
+const entranceValid = computed(() => entranceLink.value.trim() === '' || parseSoundCloudUrl(entranceLink.value) !== null)
+function saveEntrance(): void {
+  const parsed = parseSoundCloudUrl(entranceLink.value)
+  if (!parsed) return
+  prefs.entranceUrl = parsed
+  entranceLink.value = parsed
+  prefs.entranceOn = true
+  showToast('Saved. Your album will start when you come in.', { tone: 'success' })
+}
+function clearEntrance(): void {
+  prefs.entranceUrl = ''
+  prefs.entranceOn = false
+  entranceLink.value = ''
+  stopEntranceMusic()
+}
+function tryEntrance(): void {
+  if (!startEntranceMusic(prefs.entranceUrl || entranceLink.value, prefs.volume)) showToast('That is not a SoundCloud link.', { tone: 'warning' })
+}
+
+const restoreInput = ref<HTMLInputElement | null>(null)
+const backup = useAction(async () => {
+  const url = URL.createObjectURL(makeBackup())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = backupFileName()
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}, { success: 'Backup saved. Keep it somewhere safe: it contains everything, including photos and private notes.' })
+const restore = useAction(async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  const backupData = decodeBackup(await file.text()) // a file that is not a backup is refused here, before anything is asked or changed
+  const made = backupData.createdAt ? ` made on ${backupData.createdAt.slice(0, 10)}` : ''
+  if (!window.confirm(`Replace everything in this browser with the backup${made}? What is here now will be lost.`)) return
+  await restoreBackup(backupData)
 })
 const erase = useAction(async () => {
   if (window.confirm('Erase everything Signal Home has stored in this browser, for both of you? This cannot be undone.')) await eraseEverything()
@@ -54,6 +95,34 @@ const toggles: { key: keyof UserSettings; label: string }[] = [
         <p class="hint">You are {{ myName }}. Your partner is {{ partnerName }}. Everything is kept only in this browser; nothing is sent anywhere.</p>
         <button type="button" class="btn btn--small btn--quiet" @click="leave.run()">Switch person</button>
         <button type="button" class="btn btn--small btn--danger" @click="erase.run()">Erase everything in this browser</button>
+      </section>
+
+      <section class="stack" aria-labelledby="entrance-h">
+        <h3 id="entrance-h">Entrance album (SoundCloud)</h3>
+        <p class="hint">Paste a link to your SoundCloud album, playlist or track. It starts playing when you come in. This is the one thing that uses the internet: SoundCloud’s own player is loaded, so SoundCloud can see this browser’s address and may set its own cookies. Nothing is loaded unless you save a link here.</p>
+        <form class="stack" @submit.prevent="saveEntrance">
+          <div class="field">
+            <label for="entrance-link">SoundCloud link</label>
+            <input id="entrance-link" v-model="entranceLink" class="input" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="soundcloud.com/your-name/sets/your-album" :aria-invalid="!entranceValid" aria-describedby="entrance-note" />
+            <span id="entrance-note" class="hint" :role="entranceValid ? undefined : 'alert'">{{ entranceValid ? (prefs.entranceUrl ? 'Saved.' : 'Only soundcloud.com links are accepted.') : 'That is not a soundcloud.com link.' }}</span>
+          </div>
+          <label class="switch"><input v-model="prefs.entranceOn" type="checkbox" :disabled="!prefs.entranceUrl" /><span>Play it when I come in</span></label>
+          <div class="row">
+            <button type="submit" class="btn btn--small btn--primary" :disabled="!entranceValid || entranceLink.trim() === ''">Save link</button>
+            <button type="button" class="btn btn--small" :disabled="!entranceValid || (!prefs.entranceUrl && entranceLink.trim() === '')" @click="entrance.active ? stopEntranceMusic() : tryEntrance()">{{ entrance.active ? 'Stop it' : 'Play it now' }}</button>
+            <button v-if="prefs.entranceUrl" type="button" class="btn btn--small btn--quiet" @click="clearEntrance">Remove</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="stack" aria-labelledby="backup-h">
+        <h3 id="backup-h">Backup</h3>
+        <p class="hint">Everything lives only in this browser, so clearing the browser’s data would erase it. A backup is one file with all of it (including photos, songs and private notes). Restoring replaces what is here.</p>
+        <div class="row">
+          <button type="button" class="btn btn--small" :disabled="backup.busy.value" @click="backup.run()">Save a backup</button>
+          <button type="button" class="btn btn--small" :disabled="restore.busy.value" @click="restoreInput?.click()">Restore a backup…</button>
+          <input ref="restoreInput" class="visually-hidden" type="file" accept="application/json,.json" tabindex="-1" aria-hidden="true" @change="restore.run($event)" />
+        </div>
       </section>
 
       <section class="stack" aria-labelledby="notif">

@@ -14,6 +14,7 @@
 
 export const PANEL_IDS = [
   'love-ping', 'listening', 'garden', 'date-jar', 'hidden-notes', 'mischief', 'spell-table', 'love-universe', 'vault', 'time-capsule',
+  'calendar', 'daily', 'postcards',
 ] as const
 export type PanelId = (typeof PANEL_IDS)[number]
 
@@ -102,6 +103,21 @@ export const INTERACTIONS = [
     id: 'obj_ceiling_lamp', label: 'Ceiling lamp', description: 'Switch the room light on or off.',
     behavior: { type: 'action', action: 'toggle_lamp' }, camera: { target: [0, 1.9, -0.1], zoom: 1.5 }, highlight: 0xffcc8d,
     noteTarget: false, keyboardOrder: 11, sfx: 'toggle', placeholderAt: [0, 2.08, -0.1],
+  },
+  {
+    id: 'obj_calendar', label: 'Calendar', description: 'Anniversaries, birthdays and countdowns you are both looking forward to.',
+    behavior: { type: 'panel', panel: 'calendar' }, camera: { target: [0.3, 1.45, -1.6], zoom: 2.4 }, highlight: 0xffb4c9,
+    noteTarget: true, keyboardOrder: 12, sfx: 'open', placeholderAt: [0.3, 1.45, -1.66],
+  },
+  {
+    id: 'obj_chalkboard', label: 'Question board', description: 'One question a day. Answers stay secret until you have both answered.',
+    behavior: { type: 'panel', panel: 'daily' }, camera: { target: [-2.0, 1.3, 1.05], zoom: 2.1 }, highlight: 0xbfe8c8,
+    noteTarget: true, keyboardOrder: 13, sfx: 'select', placeholderAt: [-2.25, 1.3, 1.05],
+  },
+  {
+    id: 'obj_postbox', label: 'Postbox', description: 'Postcards: send a message as a code or link, and open the ones you receive.',
+    behavior: { type: 'panel', panel: 'postcards' }, camera: { target: [1.95, 0.6, -0.95], zoom: 2.3 }, highlight: 0xff8c8c,
+    noteTarget: true, keyboardOrder: 14, sfx: 'pop', placeholderAt: [1.95, 0, -0.95],
   },
 ] as const satisfies readonly InteractionDefinition[]
 

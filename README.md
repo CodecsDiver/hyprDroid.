@@ -8,7 +8,7 @@ pings, the guitar plays music, the window grows a mood garden, the heart opens t
 |---|---|
 | Stack | Vue 3 (Composition API) · TypeScript strict · Vite · Three.js · CSS design tokens |
 | Shape | One self-contained `index.html` (~1 MB). Open it from disk or host it anywhere static. |
-| Storage | **Only this browser's own storage** (IndexedDB), the same place a web page keeps its cache. Nothing is sent anywhere. |
+| Storage | **Only this browser's own storage** (IndexedDB), the same place a web page keeps its cache. Nothing is sent anywhere, with one opt-in exception: an entrance album you link from SoundCloud. |
 | Accounts / devices | None. No sign-in, no cookies, no device ids, no fingerprinting. The first screen just asks "Who is here?" and forgets the answer when the page closes. |
 
 > **Read this first: one browser = one home.** With no server there is nothing to carry a message from your phone to
@@ -46,7 +46,7 @@ Open `private/signal-home.html`. On first open it loads everything into the brow
 | `npm run build` | Typecheck + build the single public `dist/index.html` |
 | `npm run build:private` | Build your private copy with your originals inside |
 | `npm run verify` | Typecheck + tests + build + **dist safety check** (no private content, no network calls) |
-| `npm test` | 176 tests (49 backend behaviour tests, SHA checks, "no network / no device ids" source guards, domain, scene, UI logic) |
+| `npm test` | 216 tests (backend behaviour incl. sealed notes / daily question / dates, SHA, backups, postcards, seasons, SoundCloud link checks, "no network / no device ids" source guards, domain, scene) |
 | `npm run test:e2e` | Opens the built file from disk in a real browser (needs Playwright; see the file header) |
 | `npm run assets:extract` | Pull the private originals/art/song/notes out of your two HTML files into `./private` |
 
@@ -62,6 +62,16 @@ Open `private/signal-home.html`. On first open it loads everything into the brow
 - **Love Universe** — the original heart rebuilt: notes, hugs, sparkles, stickers (including your own).
 - **Memory Vault** — private photos, voice messages, notes and milestones.
 - **Time Capsule** — the two original apps, kept byte-for-byte and verified by SHA-256, in an isolated sandbox with no internet access unless you switch it on.
+- **Calendar** — anniversaries, birthdays, countdowns and milestones; "days together"; the room celebrates on the day.
+- **Question of the day** — one question each day for both of you; each answer stays secret until you have both answered; past days are kept.
+- **Postbox** — "postcards": a short code (or link) that carries a heart, kiss or hug from one device's copy to the other's, with no server. Importing the same one twice does nothing.
+- **Sealed notes** — Hidden Notes can be sealed until a date; until then the text is not even in the data the other person's side receives.
+- **Our songs** — heart a song; when you both do, it becomes an Our Song.
+- **Photo wall** — your shared Vault photos hang in frames on the back wall.
+- **Seasons** — snow in winter, blossom in spring, fireflies on summer evenings, falling leaves in autumn, from the real date.
+- **Mood history** — the Mood Garden keeps a four-week grid of the moods you each chose.
+- **Backup** — save everything to one file and restore it (browser storage can be cleared).
+- **Entrance album** — paste a SoundCloud link in Settings and it plays when you come in.
 
 ## Where things live
 

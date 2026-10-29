@@ -46,6 +46,24 @@ const weatherLabels: Record<string, string> = {
 const skyClass = computed(() => `sky--${environment.value.weather}`)
 const speciesName = (p: PlannedPlacement): string => p.species
 
+/** The last four weeks, one cell per person per day: the mood each chose first that day (that is the day's seed). */
+const HISTORY_DAYS = 28
+const historyDays = computed(() => {
+  const out: string[] = []
+  for (let i = HISTORY_DAYS - 1; i >= 0; i--) out.push(new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10))
+  return out
+})
+const historyRows = computed(() => {
+  const people = [{ id: session.userId ?? '', name: myName.value }, { id: home.partner?.id ?? '', name: partnerName.value }]
+  return people.map((person) => ({
+    ...person,
+    cells: historyDays.value.map((day) => {
+      const plant = plants.value.find((p) => p.plantedBy === person.id && p.plantedOn === day)
+      return { day, mood: plant ? MOODS[plant.mood] : null }
+    }),
+  }))
+})
+
 function select(placement: PlannedPlacement): void {
   selectedId.value = placement.plant.id
 }
@@ -112,7 +130,25 @@ function select(placement: PlannedPlacement): void {
             </li>
           </ul>
         </details>
-        <p class="hint">The garden is stored on your server, shared by both of you, so it looks the same on both devices and survives reloads.</p>
+        <details class="history">
+          <summary>Mood history (last {{ HISTORY_DAYS }} days)</summary>
+          <div class="history__scroll">
+            <table class="history__table">
+              <caption class="visually-hidden">The mood each of you chose first on each day</caption>
+              <thead><tr><th scope="col">Who</th><th v-for="day in historyDays" :key="day" scope="col" class="history__day">{{ day.slice(8) }}</th></tr></thead>
+              <tbody>
+                <tr v-for="row in historyRows" :key="row.id">
+                  <th scope="row">{{ row.name }}</th>
+                  <td v-for="cell in row.cells" :key="cell.day">
+                    <span v-if="cell.mood" role="img" :aria-label="`${cell.day}: ${cell.mood.label}`" :title="`${cell.day}: ${cell.mood.label}`">{{ cell.mood.emoji }}</span>
+                    <span v-else aria-hidden="true" class="hint">·</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <p class="hint">The garden is kept in this browser, shared by both of you, and survives reloads.</p>
       </section>
     </div>
   </PanelShell>
@@ -133,5 +169,9 @@ function select(placement: PlannedPlacement): void {
 .plant { cursor: pointer; }
 .plant:focus-visible { outline: none; }
 .plant:focus-visible rect, .plant--selected rect { stroke: var(--color-gold); stroke-width: 2; stroke-dasharray: 4 3; }
+.history__scroll { overflow-x: auto; }
+.history__table { border-collapse: collapse; font-size: var(--text-sm); }
+.history__table th, .history__table td { padding: 2px 4px; text-align: center; white-space: nowrap; }
+.history__day { font-weight: 400; opacity: 0.7; font-size: 0.7rem; }
 .plain { list-style: none; padding: 0; margin: var(--space-2) 0 0; display: flex; flex-wrap: wrap; gap: var(--space-1); }
 </style>

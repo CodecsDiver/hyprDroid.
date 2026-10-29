@@ -22,5 +22,8 @@ export const PANELS: Readonly<Record<ActivePanel, PanelDefinition>> = {
   'love-universe': { title: 'Love Universe', icon: '💗', fullscreen: true, component: defineAsyncComponent(() => import('./love-universe/LoveUniversePanel.vue')) },
   vault: { title: 'Memory Vault', icon: '📷', component: defineAsyncComponent(() => import('./vault/VaultPanel.vue')) },
   'time-capsule': { title: 'Time Capsule', icon: '⏳', fullscreen: true, component: defineAsyncComponent(() => import('./time-capsule/TimeCapsulePanel.vue')) },
+  calendar: { title: 'Calendar', icon: '📅', component: defineAsyncComponent(() => import('./calendar/CalendarPanel.vue')) },
+  daily: { title: 'Question of the day', icon: '🪧', component: defineAsyncComponent(() => import('./daily/DailyPanel.vue')) },
+  postcards: { title: 'Postcards', icon: '📮', component: defineAsyncComponent(() => import('./postcards/PostcardsPanel.vue')) },
   settings: { title: 'Settings', icon: '⚙️', component: defineAsyncComponent(() => import('./settings/SettingsPanel.vue')) },
 }

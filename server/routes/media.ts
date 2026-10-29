@@ -16,7 +16,14 @@ async function ownFile(ctx: Ctx, id: unknown, userId: string, kinds: FileMeta['k
 
 export function registerMedia(router: Router): void {
   // ================================================================ tracks
-  router.get('/tracks', async (_req, ctx) => (await listValues<Track & { createdAt: string }>(ctx.store, 'tracks/')).sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+  router.get('/tracks', async (_req, ctx) => {
+    const loves = new Map<string, string[]>()
+    for (const key of await ctx.store.list('trackloves/')) {
+      const [, trackId, userId] = key.split('/')
+      if (trackId && userId) loves.set(trackId, [...(loves.get(trackId) ?? []), userId])
+    }
+    return (await listValues<Track & { createdAt: string }>(ctx.store, 'tracks/')).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((track) => ({ ...track, lovedBy: loves.get(track.id) ?? [] }))
+  })
 
   router.post('/tracks', async (req, ctx) => {
     const body = requireObject(await req.json())
@@ -38,6 +45,7 @@ export function registerMedia(router: Router): void {
     const track = await getValue<Track>(ctx.store, `tracks/${id}`)
     if (!track || track.ownerId !== req.user.id) throw new ApiError(404, 'not_found')
     await ctx.store.remove(`tracks/${id}`)
+    for (const key of await ctx.store.list(`trackloves/${id}/`)) await ctx.store.remove(key)
     for (const playlist of await listValues<Playlist>(ctx.store, 'playlists/')) {
       if (playlist.trackIds.includes(id)) await ctx.store.put(`playlists/${playlist.id}`, { ...playlist, trackIds: playlist.trackIds.filter((t) => t !== id) })
     }

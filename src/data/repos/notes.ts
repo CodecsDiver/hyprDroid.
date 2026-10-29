@@ -8,6 +8,8 @@ export interface PlaceNoteInput {
   body: string
   openWhen: string
   reveal: NoteReveal
+  /** Seal the note until this day (`YYYY-MM-DD`). */
+  unlockOn?: string
 }
 
 /** `clientNoteId` makes retries idempotent: pass the same id when re-submitting. */

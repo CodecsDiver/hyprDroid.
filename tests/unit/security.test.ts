@@ -21,6 +21,15 @@ describe('the app stays inside the page', () => {
     }
   })
 
+  it('the entrance player is the only code that can reach another site, and it only names SoundCloud’s player', () => {
+    const entranceFile = join(root, 'src', 'audio', 'entrance.ts')
+    const literals = [...readFileSync(entranceFile, 'utf8').matchAll(/['"`](https?:\/\/[^'"`]+)['"`]/g)].map((m) => m[1]!)
+    expect(literals.length).toBeGreaterThan(0)
+    // The `https://${…}` forms are links being checked against the allow-list, never loaded as written.
+    for (const literal of literals) expect(literal.startsWith('https://w.soundcloud.com') || literal.startsWith('https://${')).toBe(true)
+    for (const file of sources.filter((f) => !f.endsWith('entrance.ts') && !f.endsWith('viewer.js'))) expect(/createElement\(\s*['"]iframe['"]/.test(readFileSync(file, 'utf8')), `${file} creates a frame`).toBe(false)
+  })
+
   it('does not identify or remember devices', () => {
     for (const file of sources) {
       const text = readFileSync(file, 'utf8')
@@ -28,8 +37,8 @@ describe('the app stays inside the page', () => {
     }
   })
 
-  it('has no external URLs in the app code', () => {
-    for (const file of sources.filter((f) => !f.endsWith('viewer.js'))) {
+  it('has no external URLs in the app code, except the optional SoundCloud entrance player', () => {
+    for (const file of sources.filter((f) => !f.endsWith('viewer.js') && !f.endsWith('entrance.ts'))) {
       const text = readFileSync(file, 'utf8').replace(/http:\/\/signal-home\.local/g, '').replace(/https?:\/\/(www\.)?(w3\.org|github\.com)[^\s'"`]*/g, '')
       expect(/https?:\/\//.test(text), `${file} mentions an external address`).toBe(false)
     }

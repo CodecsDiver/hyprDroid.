@@ -11,6 +11,10 @@ The earlier versions depended on Supabase, then on a Netlify-hosted backend. Bot
 *inside the page*, over a store that lives in the browser's own IndexedDB. The result builds to a single `index.html`: no server, no
 accounts, no cookies, no network requests, no device identification. The price is that two different devices cannot exchange messages.
 
+## Second revision: ten additions
+
+Backup and restore · postcards (a code that carries a message between two devices) · calendar with days-together and a celebration on the day · sealed notes · question of the day · our songs · photo wall in the room · seasons · mood history · SoundCloud entrance album (opt-in, the one use of the internet). Real room art was **not** done: it needs a Blender file that does not exist yet.
+
 ## What was built
 
 | Brief | Delivered |
@@ -31,11 +35,18 @@ accounts, no cookies, no network requests, no device identification. The price i
 | Backend behaviour tests on the real handler (events, consent, idempotency, notes, files, capsule immutability, sync…) | **49 pass** |
 | Browser SHA-1/SHA-256 equal Node's for edge-case sizes and awkward chunking | pass |
 | Source guards: no network APIs, no device-identifying APIs, no external URLs in `src/` | pass |
-| Unit tests (domain, outbox, inbox, dispatcher, registry, manifest, scene, integrity, scripts) | **176 tests total pass** |
+| Backend tests for the additions: sealed notes (text withheld, reading refused, opens on the day, bad dates), question of the day (secret until both answer, locks after), dates (limits, validation), song hearts | **12 pass** |
+| Unit tests for the additions: date maths (leap days, years, sorting), postcard codec (forgery, expiry, non-ASCII, unknown kinds), backups (round trip of 3 MB files, path tricks, damage), seasons (particles by season/time/rain), SoundCloud link checking and the player frame | **40 pass** |
+| Whole suite (everything above plus the earlier tests) | **216 tests pass** |
 | Public build: exactly one file (1.0 MB), none of your private content in it (searched raw and base64) | pass |
-| Browser test, public build opened from `file://`: who-is-here screen, hand-over delivery, consent refusal, persistence across reload, nobody assumed after reload, no cookies, erase, **no request leaves the page**, no console errors | **13 / 13** |
-| Browser test, private build: the above plus both originals verified and rendering in the sandbox, original wording, room song loaded | **19 / 19** |
-| axe-core WCAG 2.x A/AA on the picker, home, note reveal and all panels (private build, with a track present) | **0 violations** (automated only; one real issue was found and fixed along the way) |
+| Browser test, public build opened from `file://`: who-is-here screen, hand-over delivery, consent refusal, persistence, no cookies; calendar; question of the day (secret, then both); sealed note (no text, no Open button); postcards (own refused, delivered, repeat harmless, damage refused); photo wall; mood history; backup → erase → restore (and a non-backup refused); entrance album (bad link refused, frame with autoplay created, pause button, only `w.soundcloud.com` contacted); **nothing reaches the internet before a link is saved**; no console errors | **36 / 36** |
+| Browser test, private build: the above plus both originals verified and rendering in the sandbox, original wording, room song, and an Our Song hearted by both | **43 / 43** |
+| axe-core WCAG 2.x A/AA on the picker, home, note reveal and all panels including the new ones (private build, with a track present) | **0 violations** (automated only) |
+| Scripted keyboard-only pass over all 13 panels: opens from the menu, Escape closes, focus returns to the menu button | clean after fixing one real bug (focus was lost when a panel closed). Remaining notes: native date-picker icon and the Love Universe heart's glow-style focus indicator |
+
+## Not verified in this revision
+
+The SoundCloud player against the real SoundCloud (the environment it was built in cannot reach it). See LIMITATIONS 11.
 
 ## Files you should know about
 

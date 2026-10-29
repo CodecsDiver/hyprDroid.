@@ -41,6 +41,7 @@ function onMenuKey(event: KeyboardEvent, index: number): void {
 
 function choose(id: string): void {
   void setOpen(false)
+  toggle.value?.focus() // the menu is about to close: the panel will give focus back here when it is dismissed
   emit('activate', id)
 }
 </script>

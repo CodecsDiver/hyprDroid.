@@ -5,6 +5,7 @@ import NoteReveal from '@/components/NoteReveal.vue'
 import PanelShell from '@/components/PanelShell.vue'
 import { deleteNote, placeNote } from '@/data/repos/notes'
 import { NOTE_REVEALS, type HiddenNote, type NoteReveal as RevealKind } from '@/domain/notes'
+import { localDay } from '@/domain/importantDates'
 import { relativeTime } from '@/domain/time'
 import { getInteraction, noteTargets } from '@/registry/interactionRegistry'
 import { partnerName } from '@/state/household'
@@ -19,7 +20,8 @@ defineEmits<{ close: [] }>()
 
 const tab = ref<'waiting' | 'place' | 'sent'>(unreadTotal() > 0 ? 'waiting' : 'place')
 const targets = noteTargets()
-const form = ref({ objectId: ui.objectId && targets.some((t) => t.id === ui.objectId) ? ui.objectId : (targets[0]?.id ?? 'obj_letter_desk'), body: '', openWhen: '', reveal: 'fade' as RevealKind })
+const form = ref({ objectId: ui.objectId && targets.some((t) => t.id === ui.objectId) ? ui.objectId : (targets[0]?.id ?? 'obj_letter_desk'), body: '', openWhen: '', reveal: 'fade' as RevealKind, unlockOn: '' })
+const today = localDay(new Date())
 const WHEN_SUGGESTIONS = ['you miss me', "you're sad", "you're proud of yourself", "you can't sleep", "you need a laugh"]
 const viewing = ref<HiddenNote | null>(null)
 // One id per draft: if a submit is retried (network blip) the server de-duplicates it.
@@ -35,9 +37,9 @@ const sent = computed(() => notes.value.filter((n) => n.authorId === session.use
 const where = (id: string): string => getInteraction(id)?.label ?? 'the room'
 
 const place = useAction(async () => {
-  await placeNote(form.value, draftId)
+  await placeNote({ ...form.value, unlockOn: form.value.unlockOn || undefined }, draftId)
   draftId = crypto.randomUUID()
-  form.value = { ...form.value, body: '', openWhen: '' }
+  form.value = { ...form.value, body: '', openWhen: '', unlockOn: '' }
   await refreshNotes()
   tab.value = 'sent'
 }, { success: 'Hidden. They will be told something is waiting.' })
@@ -63,7 +65,8 @@ const remove = useAction(async (note: HiddenNote) => {
         <ul v-else class="plain" role="list">
           <li v-for="note in waiting" :key="note.id" class="card note">
             <div class="grow"><p class="note__where">On the {{ where(note.objectId).toLowerCase() }}</p><p class="hint">{{ note.openWhen ? `Open when ${note.openWhen.toLowerCase()} · ` : '' }}{{ relativeTime(note.createdAt) }}</p></div>
-            <button type="button" class="btn btn--primary btn--small" @click="viewing = note">Open</button>
+            <span v-if="note.sealed" class="chip" role="status">🔒 Sealed until {{ note.unlockOn }}</span>
+            <button v-else type="button" class="btn btn--primary btn--small" @click="viewing = note">Open</button>
           </li>
         </ul>
         <details v-if="opened.length > 0">
@@ -94,6 +97,11 @@ const remove = useAction(async (note: HiddenNote) => {
           <datalist id="when-list"><option v-for="s in WHEN_SUGGESTIONS" :key="s" :value="s" /></datalist>
         </div>
         <div class="field">
+          <label for="unlock">Keep it sealed until (optional)</label>
+          <input id="unlock" v-model="form.unlockOn" class="input" type="date" :min="today" />
+          <span class="hint">Until that day they can see that something is waiting, but not read it.</span>
+        </div>
+        <div class="field">
           <label for="reveal">When they find it</label>
           <select id="reveal" v-model="form.reveal" class="input"><option v-for="r in NOTE_REVEALS" :key="r.id" :value="r.id">{{ r.label }}</option></select>
         </div>
@@ -107,7 +115,7 @@ const remove = useAction(async (note: HiddenNote) => {
             <div class="grow">
               <p class="note__where">On the {{ where(note.objectId).toLowerCase() }}</p>
               <p class="body">{{ note.body }}</p>
-              <p class="hint">{{ note.readAt ? `Opened ${relativeTime(note.readAt)}` : 'Not opened yet' }} · hidden {{ relativeTime(note.createdAt) }}</p>
+              <p class="hint">{{ note.readAt ? `Opened ${relativeTime(note.readAt)}` : note.sealed ? `Sealed until ${note.unlockOn}` : 'Not opened yet' }} · hidden {{ relativeTime(note.createdAt) }}</p>
             </div>
             <button type="button" class="btn btn--small btn--quiet" aria-label="Take this note back" @click="remove.run(note)">🗑</button>
           </li>

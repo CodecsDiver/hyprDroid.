@@ -11,6 +11,7 @@ import { LightingRig } from './lighting'
 import { AnimationDirector, buildHouse, type HouseBuild } from './loader'
 import { pickInteraction } from './picking'
 import { disposeObject } from './placeholders'
+import { PhotoWall } from './photoWall'
 import { WeatherSystem, type Quality } from './weather'
 
 export interface SceneOptions {
@@ -47,6 +48,7 @@ export class SceneController {
   private readonly rig: CameraRig
   private readonly lighting = new LightingRig()
   private readonly weather: WeatherSystem
+  private readonly photos: PhotoWall
   private readonly highlight: HighlightController
   private readonly beacons: NoteBeacons
   private readonly garden: GardenView
@@ -96,6 +98,8 @@ export class SceneController {
     this.scene.add(house.root, this.lighting.group)
     this.weather = new WeatherSystem(quality, dpr)
     this.scene.add(this.weather.group)
+    this.photos = new PhotoWall(() => (this.dirty = true))
+    this.scene.add(this.photos.group)
 
     const tints = new Map((o.definitions ?? INTERACTIONS).map((d) => [d.id, d.highlight]))
     this.highlight = new HighlightController(house.roots, tints)
@@ -145,6 +149,7 @@ export class SceneController {
     this.environment = env
     this.lighting.apply(env)
     this.weather.setWeather(env.weather, env.particleDensity, env.timeOfDay === 'night' && env.weather === 'clear')
+    this.weather.setSeason(env.season, env.timeOfDay, env.weather)
     // The orthographic camera sits ~7.6 units from the room centre, so fog distances are offset to match.
     this.scene.fog = env.fog ? new Fog(env.fog.color, env.fog.near + 3, env.fog.far + 5.5) : null
     this.dirty = true
@@ -159,6 +164,11 @@ export class SceneController {
     this.beacons.set(counts)
     for (const id of this.house.roots.keys()) this.animations.setActive(id, 'unread-note', (counts.get(id) ?? 0) > 0)
     this.dirty = true
+  }
+
+  /** Shared photos to hang on the back wall (browser-storage URLs, newest first). */
+  setPhotos(urls: readonly string[]): void {
+    this.photos.set(urls)
   }
 
   setGarden(placements: readonly PlantPlacement[]): void {
@@ -231,6 +241,7 @@ export class SceneController {
     this.beacons.dispose()
     this.garden.dispose()
     this.weather.dispose()
+    this.photos.dispose()
     this.lighting.dispose()
     disposeObject(this.house.root)
     this.scene.clear()

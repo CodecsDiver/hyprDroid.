@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { AmbientPlayer, playSfx, unlockAudio } from '@/audio/engine'
+import { entrance, pauseEntranceMusic, resumeEntranceMusic, setEntranceVolume, stopEntranceMusic } from '@/audio/entrance'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import NoteReveal from '@/components/NoteReveal.vue'
@@ -8,6 +9,9 @@ import ObjectNavigator from '@/components/ObjectNavigator.vue'
 import StatusBar from '@/components/StatusBar.vue'
 import { DEFAULT_MANIFEST, createAssetResolver, validateManifest } from '@/assets/manifest'
 import { fileUrl } from '@/data/files'
+import { fetchDates } from '@/data/repos/keepsakes'
+import { fetchMemories } from '@/data/repos/vault'
+import { describeDate, localDay, todaysDates } from '@/domain/importantDates'
 import { unreadForObject } from '@/domain/notes'
 import { MOODS } from '@/domain/moods'
 import { roseStage } from '@/domain/rose'
@@ -84,6 +88,32 @@ async function mountScene(): Promise<void> {
   }
 }
 
+// ------------------------------------------------------------ photo wall (shared photos only)
+async function refreshWall(): Promise<void> {
+  try {
+    const photos = (await fetchMemories()).filter((m) => m.kind === 'photo' && m.visibility === 'shared' && m.fileId)
+    scene.value?.setPhotos(photos.map((m) => fileUrl(m.fileId!)).filter(Boolean))
+  } catch {
+    /* the wall is decoration */
+  }
+}
+
+// ------------------------------------------------------------ days that matter
+async function celebrateToday(): Promise<void> {
+  try {
+    const today = localDay(new Date())
+    const dates = todaysDates(await fetchDates(), today)
+    if (dates.length === 0) return
+    const first = dates[0]!
+    const { badge } = describeDate(first, today)
+    showToast(`Today: ${first.title}${badge ? ` (${badge})` : ''} 🎉`, { tone: 'success', timeoutMs: 9000 })
+    playEffect({ type: 'reaction', emoji: first.kind === 'birthday' ? '🎂' : '🎉', animation: 'burst' }, 3200)
+    playSfx('love')
+  } catch {
+    /* nothing to celebrate */
+  }
+}
+
 function applyAll(): void {
   const s = scene.value
   if (!s) return
@@ -91,6 +121,7 @@ function applyAll(): void {
   s.setRoseStage(roseStage(home.bondXp))
   s.setUnreadNotes(unreadCounts.value)
   s.setGarden(gardenPlacements.value)
+  void refreshWall()
   syncSelection()
 }
 
@@ -100,6 +131,10 @@ watch(unreadCounts, (counts) => scene.value?.setUnreadNotes(counts))
 watch(gardenPlacements, (placements) => scene.value?.setGarden(placements))
 
 // ------------------------------------------------------------ ambient audio
+// The entrance album follows the sound switch and volume (it started on the tap that came in).
+watch(() => prefs.soundOn, (on) => (on ? resumeEntranceMusic() : pauseEntranceMusic()))
+watch(() => prefs.volume, (volume) => setEntranceVolume(volume))
+
 watch(() => [environment.value.ambient, prefs.soundOn] as const, ([id, on]) => void ambient.set(on ? id : null), { immediate: true })
 
 // ------------------------------------------------------------ activation & panels
@@ -215,6 +250,7 @@ async function boot(): Promise<void> {
     onTableChange('garden_plants', () => void refreshPlants().catch(() => {})),
     onTableChange('household_state', () => void refreshBondXp()),
     onTableChange('stickers', () => void refreshStickers().catch(() => {})),
+    onTableChange('memories', () => void refreshWall()),
     // A live "I'm here" pulse from the partner. (The Love Universe shows its own, richer version.)
     onPartnerHeart(() => {
       if (ui.panel === 'love-universe') return
@@ -223,7 +259,12 @@ async function boot(): Promise<void> {
     }),
   )
   await Promise.allSettled([refreshMoods(), refreshNotes(), refreshPlants()])
+  void celebrateToday()
+  // A sealed note opens at midnight even if the page has been open all night.
+  noteTimer = setInterval(() => void refreshNotes().catch(() => {}), 10 * 60_000)
+  if (location.hash.startsWith('#postcard=')) openPanel('postcards') // a postcard link was opened: take them straight to it
 }
+let noteTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   void mountScene()
@@ -238,6 +279,8 @@ onBeforeUnmount(() => {
   disposed = true
   window.removeEventListener('hashchange', onHashChange)
   stopHandlers?.()
+  if (noteTimer) clearInterval(noteTimer)
+  stopEntranceMusic()
   offTables.forEach((off) => off())
   stopLive()
   ambient.dispose()
@@ -281,6 +324,9 @@ function pingHeart(): void {
       <StatusBar />
       <h1 class="hud__title">Signal Home</h1>
       <div class="row hud__actions">
+        <button v-if="entrance.active" type="button" class="btn btn--small btn--quiet" :aria-pressed="entrance.playing" :aria-label="entrance.playing ? 'Pause the entrance album' : 'Play the entrance album'" @click="entrance.playing ? pauseEntranceMusic() : resumeEntranceMusic()">
+          <span aria-hidden="true">{{ entrance.playing ? '🎵' : '▶️' }}</span>
+        </button>
         <button type="button" class="btn btn--small btn--quiet" :aria-pressed="prefs.soundOn" :aria-label="prefs.soundOn ? 'Mute sound' : 'Turn sound on'" @click="prefs.soundOn = !prefs.soundOn">
           <span aria-hidden="true">{{ prefs.soundOn ? '🔊' : '🔇' }}</span>
         </button>

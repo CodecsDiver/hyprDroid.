@@ -78,6 +78,18 @@ export class LocalStore extends BytesStore {
     return [...this.data.keys()].filter((key) => key.startsWith(prefix)).sort()
   }
 
+  /** Every record and file currently stored (for backups). */
+  snapshot(): [string, Uint8Array][] {
+    return [...this.data.entries()]
+  }
+
+  /** Replaces everything with these entries and waits until they are safely written (for restoring a backup). */
+  async replaceAll(entries: Map<string, Uint8Array>): Promise<void> {
+    await this.clear()
+    for (const [key, bytes] of entries) this.write(key, bytes)
+    await this.flush()
+  }
+
   /** Forgets everything (used by "Erase everything on this device"). */
   async clear(): Promise<void> {
     this.data.clear()

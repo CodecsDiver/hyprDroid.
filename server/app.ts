@@ -7,6 +7,7 @@ import { registerAuth } from './routes/auth'
 import { registerContent } from './routes/content'
 import { registerEvents } from './routes/events'
 import { registerFiles } from './routes/files'
+import { registerKeepsakes } from './routes/keepsakes'
 import { registerMedia } from './routes/media'
 import { registerState } from './routes/state'
 import { registerSync } from './routes/sync'
@@ -20,6 +21,7 @@ export function buildRouter(): Router {
   registerContent(router)
   registerFiles(router)
   registerMedia(router)
+  registerKeepsakes(router)
   return router
 }
 

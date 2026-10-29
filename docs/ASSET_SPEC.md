@@ -51,6 +51,9 @@ The node's origin should be at its base. It may contain any number of child mesh
 | `obj_memory_shelf` | Memory Vault | −2.15, 1.35, −0.9 |
 | `obj_mischief_box` | Mischief Mode | 0.7, 0, 1.0 |
 | `obj_time_chest` | Time Capsule | −1.7, 0, 1.0 |
+| `obj_calendar` | Calendar | 0.3, 1.45, −1.66 |
+| `obj_chalkboard` | Question of the day | −2.25, 1.3, 1.05 |
+| `obj_postbox` | Postcards | 1.95, 0, −0.95 |
 | `obj_ceiling_lamp` | toggles the lamp (no panel) | 0, 2.08, −0.1 |
 
 To add or rebind an object, edit **only** `src/registry/interactionRegistry.ts` (id, label, behaviour, camera preset, highlight colour,

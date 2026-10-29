@@ -1,6 +1,7 @@
 import { MOODS, type MoodSnapshot, type WeatherKind } from './moods'
 
 export type TimeOfDay = 'dawn' | 'day' | 'dusk' | 'night'
+export type Season = 'winter' | 'spring' | 'summer' | 'autumn'
 export type AmbientId = 'rain' | 'gentle' | 'sleep' | 'reunion' | 'cuddly'
 
 export interface EnvironmentState {
@@ -8,6 +9,8 @@ export interface EnvironmentState {
   /** The mood that is currently driving the room, if any. */
   dominant: MoodSnapshot | null
   timeOfDay: TimeOfDay
+  /** From the calendar month (northern hemisphere): snow, blossom, fireflies or falling leaves. */
+  season: Season
   /** Ceiling lamp. Colours are 0xRRGGBB. */
   lamp: { color: number; intensity: number; halo: number }
   /** Light coming through the window. */
@@ -34,6 +37,13 @@ export function timeOfDayFor(hour: number): TimeOfDay {
   if (hour >= 8 && hour < 17) return 'day'
   if (hour >= 17 && hour < 20) return 'dusk'
   return 'night'
+}
+
+export function seasonFor(month: number): Season {
+  if (month === 11 || month <= 1) return 'winter'
+  if (month <= 4) return 'spring'
+  if (month <= 7) return 'summer'
+  return 'autumn'
 }
 
 const WEATHER_AMBIENT: Partial<Record<WeatherKind, AmbientId>> = {
@@ -91,6 +101,7 @@ export function deriveEnvironment(input: EnvironmentInput): EnvironmentState {
     weather,
     dominant,
     timeOfDay,
+    season: seasonFor(input.now.getMonth()),
     lamp,
     window: windowLight,
     fog,

@@ -70,6 +70,8 @@ export interface Track {
   audioFileId: string
   coverFileId: string | null
   durationMs: number | null
+  /** Who has marked this as "our song" (a heart from each person makes it an Our Song). */
+  lovedBy?: string[]
 }
 
 export interface Playlist {
@@ -135,4 +137,33 @@ export interface CapsuleItem {
   sha256: string
   byteSize: number
   archivedAt: string
+}
+
+export type DateKind = 'anniversary' | 'birthday' | 'countdown' | 'milestone'
+export const DATE_KINDS: readonly DateKind[] = ['anniversary', 'birthday', 'countdown', 'milestone']
+
+/** A date worth remembering. `yearly` repeats it every year; otherwise it happens once. */
+export interface ImportantDate {
+  id: string
+  authorId: string
+  title: string
+  date: string
+  kind: DateKind
+  yearly: boolean
+  createdAt: string
+}
+
+export interface DailyQuestion {
+  day: string
+  question: string
+  mine: string | null
+  partnerAnswered: boolean
+  /** Only present once both of you have answered. */
+  partner: string | null
+}
+
+export interface DailyHistoryEntry {
+  day: string
+  question: string
+  answers: Record<string, string>
 }

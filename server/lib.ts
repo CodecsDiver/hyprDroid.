@@ -16,6 +16,12 @@ export function dateParam(value: unknown): string {
   return value
 }
 
+/** A real calendar day (`2025-02-30` is refused), as `YYYY-MM-DD`. */
+export function realDay(value: unknown, field: string): string {
+  if (typeof value !== 'string' || !DATE.test(value) || new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) !== value) throw new ApiError(400, 'invalid_payload', field)
+  return value
+}
+
 export const isoDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
 export const iso = (ms: number): string => new Date(ms).toISOString()
 /** Zero-padded so keys sort chronologically. */
@@ -56,7 +62,7 @@ export async function update<T>(store: Store, key: string, change: (current: T |
 
 export type Table =
   | 'moods' | 'garden_plants' | 'hidden_notes' | 'household_state' | 'listening_sessions' | 'listening_consent' | 'date_ideas'
-  | 'love_notes' | 'stickers' | 'spell_recipes' | 'memories' | 'tracks' | 'playlists'
+  | 'love_notes' | 'stickers' | 'spell_recipes' | 'memories' | 'tracks' | 'playlists' | 'important_dates' | 'daily_answers'
 
 /** Tells the other device that a collection changed (its next sync returns immediately). */
 export async function bump(ctx: Ctx, ...tables: Table[]): Promise<void> {

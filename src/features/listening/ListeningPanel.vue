@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PanelShell from '@/components/PanelShell.vue'
 import ResourceView from '@/components/ResourceView.vue'
+import { setTrackLoved } from '@/data/repos/keepsakes'
 import { addTrack, createPlaylist, deletePlaylist, deleteTrack, fetchListeningState, fetchPlaylists, fetchTracks, setListeningConsent, setPlaylistTracks, type ListeningState, type Playlist, type Track } from '@/data/repos/music'
 import { downscaleImage } from '@/data/imageTools'
 import { fileUrl } from '@/data/files'
@@ -23,6 +24,14 @@ const listening = useResource(() => fetchListeningState(), { consent: { me: fals
 const player = usePlayer({ tracks: tracks.data, listening: listening.data, myUserId: me })
 
 const view = ref<'library' | 'playlists' | 'add'>('library')
+const onlyOurs = ref(false)
+const lovedByMe = (track: Track): boolean => (track.lovedBy ?? []).includes(me)
+const isOurSong = (track: Track): boolean => (track.lovedBy ?? []).length >= 2
+const shownTracks = computed(() => (onlyOurs.value ? tracks.data.value.filter(isOurSong) : tracks.data.value))
+const heart = useAction(async (track: Track) => {
+  await setTrackLoved(track.id, !lovedByMe(track))
+  await tracks.reload()
+})
 const openPlaylistId = ref<string | null>(null)
 const coverUrls = computed(() => Object.fromEntries(tracks.data.value.filter((t) => t.coverFileId).map((t) => [t.id, fileUrl(t.coverFileId!)])))
 
@@ -167,16 +176,22 @@ const playList = (list: Playlist): void => {
 
       <ResourceView v-if="view === 'library'" :loading="tracks.loading.value" :error="tracks.error.value" @retry="tracks.reload">
         <EmptyState v-if="tracks.data.value.length === 0" emoji="🎶" title="No songs yet" hint="Add songs you own — your own recordings, music you bought, or files you have the right to use." />
+        <template v-else>
+        <label class="switch"><input v-model="onlyOurs" type="checkbox" /><span>Only our songs (hearted by both of us)</span></label>
+        <EmptyState v-if="shownTracks.length === 0" emoji="💗" title="No songs hearted by both of you yet" hint="Tap the heart on a song. When you both do, it becomes an Our Song." />
         <ul v-else class="plain" role="list">
-          <li v-for="track in tracks.data.value" :key="track.id" class="card track" :class="{ 'track--now': track.id === player.currentId.value }">
+          <li v-for="track in shownTracks" :key="track.id" class="card track" :class="{ 'track--now': track.id === player.currentId.value }">
             <img v-if="coverUrls[track.id]" class="cover cover--small" :src="coverUrls[track.id]" alt="" width="44" height="44" />
             <div v-else class="cover cover--small cover--empty" aria-hidden="true">♪</div>
             <button type="button" class="track__play grow" @click="player.playTrack(track.id, tracks.data.value.map((t) => t.id))">
               <span class="visually-hidden">Play </span><span class="track__title">{{ track.title }}</span><span class="hint">{{ track.artist }} {{ track.durationMs ? '· ' + formatDuration(track.durationMs) : '' }}</span>
             </button>
+            <span v-if="isOurSong(track)" class="chip">Our song</span>
+            <button type="button" class="btn btn--small btn--quiet" :aria-pressed="lovedByMe(track)" :aria-label="`Heart ${track.title}`" @click="heart.run(track)">{{ lovedByMe(track) ? '💗' : '🤍' }}</button>
             <button v-if="track.ownerId === me" type="button" class="btn btn--small btn--quiet" :aria-label="`Remove ${track.title}`" @click="removeTrack.run(track)">🗑</button>
           </li>
         </ul>
+        </template>
       </ResourceView>
 
       <section v-else-if="view === 'playlists'" class="stack">

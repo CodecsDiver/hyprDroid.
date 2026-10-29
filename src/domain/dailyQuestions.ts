@@ -1,0 +1,73 @@
+/** One question per calendar day, the same for both people. The answer is private until both have answered. */
+export const DAILY_QUESTIONS: readonly string[] = [
+  'What is a tiny thing I did recently that made you smile?',
+  'What is your favourite memory of us so far?',
+  'What would a perfect lazy Sunday with me look like?',
+  'What song makes you think of me?',
+  'What is something you are looking forward to?',
+  'What is one thing you want us to try together this year?',
+  'When did you last feel really proud of yourself?',
+  'What is a smell that reminds you of home?',
+  'What is one thing about me you would never want to change?',
+  'If we could teleport anywhere for dinner tonight, where would it be?',
+  'What is a small comfort that always helps when you are having a bad day?',
+  'What did you think of me the first time we met?',
+  'What is a dream you have not told many people?',
+  'What is the kindest thing someone has done for you?',
+  'What would you cook for me if you had all the time in the world?',
+  'What is your favourite thing about how we talk to each other?',
+  'What is something that made you laugh until you cried?',
+  'Which of our inside jokes is the best one?',
+  'What do you need more of right now?',
+  'What is a place that feels like us?',
+  'What is one thing you are grateful for today?',
+  'What is a skill you would love to learn together?',
+  'What is the nicest compliment you have ever received?',
+  'What is something you miss from being a kid?',
+  'Which day of the week do you like best, and why?',
+  'What would you like me to know about your day?',
+  'What is your favourite way for me to say goodnight?',
+  'What movie or show would you happily watch with me again?',
+  'What is the best gift you have ever given or been given?',
+  'What does feeling safe look like for you?',
+  'What is something you want to be better at?',
+  'What season feels most like you?',
+  'What is the sweetest thing I have ever said to you?',
+  'What is something small we should celebrate?',
+  'What would you put in a time capsule for us?',
+  'Which of my habits do you secretly love?',
+  'What is a food you could eat every day?',
+  'What is a risk you are glad you took?',
+  'What is one way I can make your week easier?',
+  'What is your favourite photo of us, and why?',
+  'What colour is today?',
+  'What is something you are curious about lately?',
+  'What is a tradition you would like us to start?',
+  'What is a hard thing you got through that you are proud of?',
+  'What is the best part of waking up next to someone you love?',
+  'If our story were a song, what would the chorus say?',
+  'What would make tomorrow feel special?',
+  'What is something you would like to forgive yourself for?',
+  'What is the first thing you would do if we had a free week?',
+  'What is the best thing that happened this week?',
+  'What is a word that describes us?',
+  'What is something you love that I might not know about?',
+  'What is a place you want to take me one day?',
+  'What is one thing that always makes you feel loved?',
+  'What would the cosiest evening with me include?',
+  'What is a quality of mine you are glad you noticed early?',
+  'What is something you wish we did more of?',
+  'What is a small adventure we could have this weekend?',
+  'What are three words for how you feel right now?',
+  'What is something you hope never changes between us?',
+]
+
+/** Days since 1970-01-01 for a `YYYY-MM-DD` date (UTC arithmetic, so it is the same everywhere). */
+export function dayNumber(day: string): number {
+  return Math.floor(Date.parse(`${day}T00:00:00Z`) / 86_400_000)
+}
+
+export function questionForDay(day: string): string {
+  const n = dayNumber(day)
+  return DAILY_QUESTIONS[((n % DAILY_QUESTIONS.length) + DAILY_QUESTIONS.length) % DAILY_QUESTIONS.length]!
+}
