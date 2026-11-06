@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#1d2433">
+  <title>Website Review Studio</title>
+  <link rel="stylesheet" href="studio/studio.css">
+</head>
+<body>
+  <a class="skip-link" href="#panes">Skip to the website preview</a>
+
+  <header class="toolbar">
+    <div class="brand-block">
+      <strong>Website Review Studio</strong>
+      <span>Three sample websites · nothing here sends or books anything</span>
+    </div>
+
+    <div class="control-group" id="design-group">
+      <span class="control-label" id="design-label">Design</span>
+      <span id="design-info-slot"></span>
+      <div class="segmented" id="design-picker" role="group" aria-labelledby="design-label"></div>
+      <div id="compare-summary" class="compare-summary" hidden></div>
+    </div>
+
+    <div class="control-group" id="page-group">
+      <label class="control-label" for="page-select">Page</label>
+      <span id="page-info-slot"></span>
+      <select id="page-select"></select>
+    </div>
+
+    <div class="control-group" id="mode-group">
+      <span class="control-label" id="mode-label">Mode</span>
+      <span id="mode-info-slot"></span>
+      <div class="segmented wide" role="group" aria-labelledby="mode-label">
+        <button type="button" id="mode-browse" aria-pressed="true">Browse the website</button>
+        <button type="button" id="mode-feedback" aria-pressed="false">Leave feedback</button>
+      </div>
+    </div>
+
+    <div class="control-group" id="compare-group">
+      <button type="button" class="btn" id="compare-button" aria-expanded="false" aria-controls="compare-chooser">Compare two designs</button>
+      <span id="compare-info-slot"></span>
+      <label class="switch" id="together-label"><input type="checkbox" id="together"><span>Keep pages together</span></label>
+      <span id="together-info-slot"></span>
+      <div class="popover-card" id="compare-chooser" hidden></div>
+    </div>
+
+    <div class="control-group tools">
+      <button type="button" class="btn toolbar-toggle" id="toolbar-toggle" aria-expanded="true">Controls ▴</button>
+      <div class="menu-wrap">
+        <button type="button" class="btn" id="help-button" aria-expanded="false" aria-haspopup="true" aria-controls="help-menu">Help</button>
+        <div class="menu" id="help-menu" hidden></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="compare-tabs" id="compare-tabs" role="group" aria-label="Which design to show" hidden></div>
+    <div class="panes" id="panes"></div>
+    <aside class="review-panel" id="review-panel" aria-label="Review panel"></aside>
+  </main>
+
+  <div id="info-card" class="info-card" hidden role="region" aria-live="polite"></div>
+  <div id="tour-root" class="tour-root" hidden></div>
+  <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+  <dialog id="studio-dialog" class="studio-dialog"></dialog>
+
+  <noscript><p style="padding:24px">The review studio needs JavaScript. Please turn it on in your browser.</p></noscript>
+
+  <script src="prototypes/shared/content.js"></script>
+  <script type="module" src="studio/js/app.js"></script>
+</body>
+</html>

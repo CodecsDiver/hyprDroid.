@@ -1,0 +1,27 @@
+# Publishes this folder as-is. There is no build step.
+[build]
+  publish = "."
+
+# Keep the studio out of search results and make updates appear at the same link right away.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"
+    X-Frame-Options = "SAMEORIGIN"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/studio/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/prototypes/*"
+  [headers.values]
+    Cache-Control = "no-cache"

@@ -1,0 +1,50 @@
+/*
+ * Base styling for the shared pop-up windows. Every prototype sets the
+ * variables below and then adds its own look on top.
+ */
+[hidden] { display: none !important; }
+dialog.dlg {
+  padding: 0; border: 1px solid var(--line, #ddd); border-radius: var(--radius, 8px);
+  background: var(--paper, #fff); color: var(--ink, #222);
+  max-height: 90dvh; max-width: 650px; width: calc(100% - 36px);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .25); overflow: auto;
+}
+dialog.dlg[open] { animation: dialog-arrive .4s ease-out; }
+dialog.dlg::backdrop { background: rgba(20, 30, 30, .45); }
+@keyframes dialog-arrive { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+.dialog-content { padding: 36px; }
+.dialog-content > small { display: block; margin-top: 14px; font-size: 12px; color: var(--muted, #666); }
+.close { position: absolute; right: 12px; top: 10px; width: 36px; height: 36px; font-size: 26px; line-height: 1; background: transparent; border: 0; color: var(--ink, #222); cursor: pointer; }
+dialog.dlg label { display: block; font-size: 14px; margin: 14px 0 0; }
+dialog.dlg label span { color: var(--muted, #666); font-size: 12px; }
+dialog.dlg input:not([type=radio]):not([type=checkbox]), dialog.dlg textarea {
+  display: block; width: 100%; padding: 11px; margin-top: 6px; font: inherit;
+  border: 1px solid var(--field-border, #bbb); border-radius: var(--field-radius, 4px); background: #fff; color: var(--ink, #222);
+}
+dialog.dlg fieldset { border: 0; padding: 10px 0 0; margin: 0; }
+dialog.dlg legend { font-size: 14px; padding: 0; }
+dialog.dlg .radio { display: inline-flex; align-items: center; gap: 8px; margin: 8px 18px 0 0; cursor: pointer; }
+dialog.dlg .check { display: flex; gap: 10px; align-items: flex-start; }
+dialog.dlg .check input { margin-top: 4px; }
+dialog.dlg .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+dialog.dlg .times .radio { width: calc(50% - 12px); margin-right: 12px; }
+dialog.dlg .sample-label { font-size: 12px; color: var(--muted, #666); margin: 6px 0 0; max-width: 520px; }
+.field-error { margin: 6px 0 0; font-size: 13px; color: #a3261c; font-weight: 600; }
+.field-error::before { content: '⚠ '; }
+[aria-invalid="true"] { border-color: #a3261c !important; }
+.form-note { font-size: 12px; color: var(--muted, #666); }
+.consult-result { margin-top: 22px; padding: 22px; background: var(--soft, #f2f2f2); border-radius: var(--radius, 8px); font-size: 14px; }
+.consult-result h3 { margin: 0 0 8px; font-size: 22px; }
+.consult-result dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 14px 0; }
+.consult-result dt { font-weight: 700; }
+.consult-result dd { margin: 0; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.result-actions .button { margin: 0; }
+@media (max-width: 760px) {
+  .dialog-content { padding: 26px; }
+  dialog.dlg .fields { grid-template-columns: 1fr; gap: 0; }
+  dialog.dlg .times .radio { width: 100%; margin-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
